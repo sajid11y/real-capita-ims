@@ -3,22 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import {
-  AlertTriangle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  BarChart3,
-  ClipboardList,
-  Download,
-  Eye,
-  History,
-  Package,
-  Plus,
-  RotateCcw,
-  Search,
-  Truck,
-  Undo2,
-  X,
-  Activity,
+  Activity, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, BarChart3, ClipboardCheck, ClipboardList,
+  Download, Eye, History, Package, Plus, Printer, RotateCcw, Search, Truck, Undo2, X, Zap,
 } from "lucide-react";
 import ImageUpload, { openAttachment } from "./ImageUpload";
 
@@ -34,7 +20,7 @@ export const PERMS = [
   ["product.manage", "Manage products"],
   ["stock.receive", "Receive stock"],
   ["stock.issue", "Distribute products"],
-  ["stock.adjust", "Adjust / damage / loss"],
+  ["stock.adjust", "Adjust / damage / loss / stock take"],
   ["return.manage", "Handle returns"],
   ["vendor.manage", "Manage vendors"],
   ["employee.manage", "Manage employees"],
@@ -52,118 +38,46 @@ export type ActiveState = "Active" | "Inactive";
 export type OfficeCategory = "Corporate Office" | "Sales Office" | "Warehouse" | "Other";
 
 export type AppUser = {
-  id: string;
-  name: string;
-  role: Role;
-  employeeId: string;
-  active: boolean;
-  backupAccess: boolean;
-  createdBy: string;
-  createdAt: string;
+  id: string; name: string; role: Role; employeeId: string; active: boolean;
+  backupAccess: boolean; createdBy: string; createdAt: string;
 };
 
 export type Company = {
-  id: string;
-  name: string;
-  code: string;
-  type: string;
-  officeCategory: OfficeCategory;
-  location: string;
-  address: string;
-  phone: string;
-  email: string;
-  manager: string;
-  status: ActiveState;
-  logo: string;
-  createdAt: string;
-  updatedAt: string;
+  id: string; name: string; code: string; type: string; officeCategory: OfficeCategory; location: string;
+  address: string; phone: string; email: string; manager: string; status: ActiveState; logo: string;
+  createdAt: string; updatedAt: string;
 };
 
-export type Department = {
-  id: string;
-  companyId: string;
-  code: string;
-  name: string;
-  head: string;
-  status: ActiveState;
-};
+export type Department = { id: string; companyId: string; code: string; name: string; head: string; status: ActiveState };
 
 export type Transfer = {
-  date: string;
-  fromCompanyId: string;
-  fromDeptId: string;
-  toCompanyId: string;
-  toDeptId: string;
-  by: string;
-  note: string;
+  date: string; fromCompanyId: string; fromDeptId: string; toCompanyId: string; toDeptId: string; by: string; note: string;
 };
 
 export type Employee = {
-  id: string;
-  empId: string;
-  name: string;
-  companyId: string;
-  departmentId: string;
-  designation: string;
-  joiningDate: string;
-  phone: string;
-  email: string;
-  photo: string;
-  status: "Active" | "Inactive" | "Left";
-  leftDate: string;
-  clearanceNote: string;
-  transfers: Transfer[];
+  id: string; empId: string; name: string; companyId: string; departmentId: string; designation: string;
+  joiningDate: string; phone: string; email: string; photo: string; status: "Active" | "Inactive" | "Left";
+  leftDate: string; clearanceNote: string; transfers: Transfer[];
 };
 
 export type Vendor = {
-  id: string;
-  name: string;
-  contact: string;
-  phone: string;
-  email: string;
-  address: string;
-  notes: string;
-  status: ActiveState;
+  id: string; name: string; contact: string; phone: string; email: string; address: string; notes: string; status: ActiveState;
 };
 
 export type ItemType = "Consumable" | "Reusable Asset";
 export type Audience = "General" | "Employee" | "Client" | "Guest" | "Event";
 
 export type Product = {
-  id: string;
-  code: string;
-  name: string;
-  category: string;
-  itemType: ItemType;
-  intendedFor: Audience;
-  baseUnit: string;
-  packUnit: string;
-  packSize: number;
-  unitWeightKg: number;
-  minStock: number;
-  unitCost: number;
-  vendorId: string;
-  location: string;
-  image: string;
-  status: ActiveState;
-  createdAt: string;
+  id: string; code: string; name: string; category: string; itemType: ItemType; intendedFor: Audience;
+  baseUnit: string; packUnit: string; packSize: number; unitWeightKg: number; minStock: number; unitCost: number;
+  vendorId: string; location: string; image: string; status: ActiveState; createdAt: string;
 };
 
 export type ReceiptLine = { productId: string; qty: number; unitPrice: number };
 export type Receipt = {
-  id: string;
-  no: string;
-  date: string;
-  vendorId: string;
-  invoiceNo: string;
-  challanNo: string;
-  challanImage: string;
-  receivedBy: string;
-  destination: string;
-  notes: string;
-  lines: ReceiptLine[];
-  status: "Pending Approval" | "Received" | "Rejected";
-  createdBy: string;
+  id: string; no: string; date: string; vendorId: string; invoiceNo: string; challanNo: string; challanImage: string;
+  receivedBy: string; destination: string; notes: string; lines: ReceiptLine[];
+  status: "Pending Approval" | "Received" | "Rejected"; createdBy: string;
 };
 
 export type RecipientType = "Employee" | "Department" | "Client" | "Guest" | "Other";
@@ -171,167 +85,61 @@ export type Usage = "Personal" | "Office" | "Gift";
 export type IssueLine = { productId: string; qty: number; unitCost: number; returnedQty: number; lostQty: number };
 export type IssueStatus = "Pending Approval" | "Awaiting Acknowledgement" | "Completed" | "Rejected" | "Reversed";
 export type Issue = {
-  id: string;
-  no: string;
-  date: string;
-  recipientType: RecipientType;
-  usage: Usage;
-  employeeId: string;
-  departmentId: string;
-  recipientName: string;
-  recipientOrg: string;
-  event: string;
-  purpose: string;
-  lines: IssueLine[];
-  issuedBy: string;
-  handover: "Direct" | "Intermediary";
-  intermediary: string;
-  notes: string;
-  status: IssueStatus;
-  pin: string;
-  ackAt: string;
-  ackBy: string;
-  createdBy: string;
+  id: string; no: string; date: string; recipientType: RecipientType; usage: Usage; employeeId: string; departmentId: string;
+  recipientName: string; recipientOrg: string; event: string; purpose: string; lines: IssueLine[]; issuedBy: string;
+  handover: "Direct" | "Intermediary"; intermediary: string; notes: string; status: IssueStatus; pin: string;
+  ackAt: string; ackBy: string; createdBy: string;
 };
 
 export type Alloc = { issueId: string; idx: number; qty: number };
 export type ReturnLine = { productId: string; qty: number; condition: string; alloc: Alloc[] };
-export type ReturnStatus =
-  | "Pending Approval"
-  | "Pending Inspection"
-  | "Completed"
-  | "Returned to Vendor"
-  | "Credited"
-  | "Rejected";
+export type ReturnStatus = "Pending Approval" | "Pending Inspection" | "Completed" | "Returned to Vendor" | "Credited" | "Rejected";
 export type ReturnDoc = {
-  id: string;
-  no: string;
-  date: string;
-  source: "Employee" | "Vendor";
-  employeeId: string;
-  vendorId: string;
-  receiptId: string;
-  lines: ReturnLine[];
-  reason: string;
-  receivedBy: string;
-  notes: string;
-  status: ReturnStatus;
-  creditAmount: number;
-  inspection: string;
-  createdBy: string;
+  id: string; no: string; date: string; source: "Employee" | "Vendor"; employeeId: string; vendorId: string; receiptId: string;
+  lines: ReturnLine[]; reason: string; receivedBy: string; notes: string; status: ReturnStatus; creditAmount: number;
+  inspection: string; createdBy: string;
 };
 
 export type AdjKind = "Increase" | "Decrease" | "Damage" | "Loss";
 export type Adjustment = {
-  id: string;
-  no: string;
-  date: string;
-  productId: string;
-  kind: AdjKind;
-  qty: number;
-  reason: string;
-  by: string;
+  id: string; no: string; date: string; productId: string; kind: AdjKind; qty: number; reason: string; by: string;
   status: "Pending Approval" | "Applied" | "Rejected";
 };
 
 export type Damage = {
-  id: string;
-  date: string;
-  productId: string;
-  qty: number;
-  kind: "Damage" | "Loss";
-  source: "Stock" | "Employee Return" | "Employee Loss";
-  employeeId: string;
-  reference: string;
-  reason: string;
-  by: string;
-  value: number;
+  id: string; date: string; productId: string; qty: number; kind: "Damage" | "Loss";
+  source: "Stock" | "Employee Return" | "Employee Loss"; employeeId: string; reference: string; reason: string; by: string; value: number;
 };
 
 export type AssetStatus = "In Store" | "Assigned" | "Under Repair" | "Disposed" | "Lost";
 export type Asset = {
-  id: string;
-  tag: string;
-  name: string;
-  category: string;
-  serial: string;
-  vendorId: string;
-  companyId: string;
-  purchaseDate: string;
-  warrantyUntil: string;
-  cost: number;
-  condition: string;
-  status: AssetStatus;
-  holderType: "None" | "Employee" | "Department";
-  employeeId: string;
-  departmentId: string;
-  image: string;
-  notes: string;
+  id: string; tag: string; name: string; category: string; serial: string; vendorId: string; companyId: string;
+  purchaseDate: string; warrantyUntil: string; cost: number; condition: string; status: AssetStatus;
+  holderType: "None" | "Employee" | "Department"; employeeId: string; departmentId: string; image: string; notes: string;
   history: { date: string; action: string; by: string; note: string; employeeId: string }[];
 };
 
 export type ApprovalKind = "receipt" | "issue" | "adjustment" | "vendorReturn" | "userDeactivate";
 export type Approval = {
-  id: string;
-  kind: ApprovalKind;
-  refId: string;
-  title: string;
-  detail: string;
-  requestedBy: string;
-  requestedByName: string;
-  requestedAt: string;
-  status: "Pending" | "Approved" | "Rejected";
-  decidedBy: string;
-  decidedAt: string;
-  comment: string;
+  id: string; kind: ApprovalKind; refId: string; title: string; detail: string; requestedBy: string; requestedByName: string;
+  requestedAt: string; status: "Pending" | "Approved" | "Rejected"; decidedBy: string; decidedAt: string; comment: string;
 };
 
 export type AuditEntry = {
-  id: string;
-  at: string;
-  userId: string;
-  userName: string;
-  role: string;
-  module: string;
-  action: string;
-  detail: string;
+  id: string; at: string; userId: string; userName: string; role: string; module: string; action: string; detail: string;
 };
 
 export type Achievement = {
-  id: string;
-  title: string;
-  category: string;
-  date: string;
-  companyId: string;
-  outcome: string;
-  metric: string;
-  notes: string;
-  image: string;
-  createdBy: string;
+  id: string; title: string; category: string; date: string; companyId: string; outcome: string; metric: string;
+  notes: string; image: string; createdBy: string;
 };
 
 export type LedgerType =
-  | "Opening"
-  | "Receive"
-  | "Issue"
-  | "Employee Return"
-  | "Vendor Return"
-  | "Adjustment"
-  | "Damage"
-  | "Loss"
-  | "Reversal";
+  | "Opening" | "Receive" | "Issue" | "Employee Return" | "Vendor Return" | "Adjustment" | "Damage" | "Loss" | "Reversal";
 
 export type LedgerEntry = {
-  id: string;
-  at: string;
-  date: string;
-  productId: string;
-  type: LedgerType;
-  qty: number;
-  ref: string;
-  party: string;
-  by: string;
-  note: string;
+  id: string; at: string; date: string; productId: string; type: LedgerType; qty: number; ref: string;
+  party: string; by: string; note: string;
 };
 
 export type Settings = {
@@ -342,25 +150,10 @@ export type Settings = {
 };
 
 export type Db = {
-  users: AppUser[];
-  perms: Record<Role, Perm[]>;
-  companies: Company[];
-  departments: Department[];
-  employees: Employee[];
-  vendors: Vendor[];
-  products: Product[];
-  receipts: Receipt[];
-  issues: Issue[];
-  returns: ReturnDoc[];
-  adjustments: Adjustment[];
-  damages: Damage[];
-  assets: Asset[];
-  ledger: LedgerEntry[];
-  approvals: Approval[];
-  audit: AuditEntry[];
-  achievements: Achievement[];
-  counters: Record<string, number>;
-  settings: Settings;
+  users: AppUser[]; perms: Record<Role, Perm[]>; companies: Company[]; departments: Department[]; employees: Employee[];
+  vendors: Vendor[]; products: Product[]; receipts: Receipt[]; issues: Issue[]; returns: ReturnDoc[];
+  adjustments: Adjustment[]; damages: Damage[]; assets: Asset[]; ledger: LedgerEntry[]; approvals: Approval[];
+  audit: AuditEntry[]; achievements: Achievement[]; counters: Record<string, number>; settings: Settings;
 };
 
 export type Result = { db: Db; error?: string; message?: string };
@@ -379,8 +172,8 @@ export type Ctx = {
 ========================================================= */
 
 const EPS = 0.0005;
-export const DB_KEY = "pids-db-v1";
-export const USER_KEY = "pids-current-user-v1";
+export const DB_KEY = "pids-db-v2";
+export const USER_KEY = "pids-current-user-v2";
 
 export const pad = (n: number) => String(n).padStart(2, "0");
 export const todayStr = () => {
@@ -388,8 +181,7 @@ export const todayStr = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 export const nowIso = () => new Date().toISOString();
-export const makeId = (prefix = "id") =>
-  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+export const makeId = (prefix = "id") => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 export const num = (v: string | number) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -403,9 +195,7 @@ export function upd<T extends { id: string }>(arr: T[], id: string, patch: Parti
 }
 
 export function downloadCsv(filename: string, rows: (string | number)[][]) {
-  const csv = rows
-    .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\r\n");
+  const csv = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\r\n");
   const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }));
   const a = document.createElement("a");
   a.href = url;
@@ -424,15 +214,8 @@ export function withNo(db: Db, prefix: string): { db: Db; no: string } {
   };
 }
 
-function led(
-  productId: string,
-  type: LedgerType,
-  qty: number,
-  ref: string,
-  party: string,
-  by: string,
-  note: string,
-  date = todayStr()
+export function led(
+  productId: string, type: LedgerType, qty: number, ref: string, party: string, by: string, note: string, date = todayStr()
 ): LedgerEntry {
   return { id: makeId("l"), at: nowIso(), date, productId, type, qty, ref, party, by, note };
 }
@@ -496,7 +279,7 @@ export function employeePossession(db: Db, employeeId: string) {
   return rows;
 }
 
-function vendorReturnValue(db: Db, r: ReturnDoc) {
+export function vendorReturnValue(db: Db, r: ReturnDoc) {
   const receipt = db.receipts.find((x) => x.id === r.receiptId);
   return r.lines.reduce((s, l) => s + l.qty * (receipt?.lines.find((x) => x.productId === l.productId)?.unitPrice ?? 0), 0);
 }
@@ -509,7 +292,7 @@ export function vendorStats(db: Db, vendorId: string) {
       const x = rows.get(l.productId) ?? { qty: 0, value: 0, last: 0, returned: 0 };
       x.qty += l.qty;
       x.value += l.qty * l.unitPrice;
-      x.last = x.last || l.unitPrice;
+      x.last = l.unitPrice || x.last;
       rows.set(l.productId, x);
     })
   );
@@ -529,6 +312,35 @@ export function vendorStats(db: Db, vendorId: string) {
   return { receipts: rec.length, purchased, returnedValue, credited, rows };
 }
 
+/** Opens a print-friendly issue slip (gate pass) in a new tab. */
+export function printIssueSlip(db: Db, i: Issue) {
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+  const rows = i.lines
+    .map((l) => {
+      const p = db.products.find((x) => x.id === l.productId);
+      return `<tr><td>${esc(p?.code ?? "")}</td><td>${esc(p?.name ?? "")}</td><td style="text-align:right">${l.qty} ${esc(p?.baseUnit ?? "")}</td></tr>`;
+    })
+    .join("");
+  const w = window.open("", "_blank");
+  if (!w) return;
+  w.document.write(`<!doctype html><html><head><title>${esc(i.no)}</title><style>
+    body{font-family:Arial,sans-serif;padding:32px;color:#0f172a}h1{margin:0;font-size:22px}
+    table{width:100%;border-collapse:collapse;margin-top:16px}td,th{border:1px solid #cbd5e1;padding:8px;font-size:13px;text-align:left}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-top:12px;font-size:13px}
+    .sign{display:flex;justify-content:space-between;margin-top:72px;font-size:12px}.sign div{border-top:1px solid #0f172a;padding-top:6px;width:30%;text-align:center}
+  </style></head><body>
+    <h1>Real Capita · Issue Slip</h1><p style="margin:4px 0 0;color:#475569">${esc(i.no)} · ${esc(i.date)}</p>
+    <div class="meta"><div><b>Recipient:</b> ${esc(recipientLabel(db, i))}</div><div><b>Use:</b> ${esc(i.usage)}</div>
+    <div><b>Event / purpose:</b> ${esc(i.event || i.purpose || "-")}</div><div><b>Handover:</b> ${esc(i.handover)}${i.intermediary ? ` (${esc(i.intermediary)})` : ""}</div>
+    <div><b>Issued by:</b> ${esc(i.issuedBy)}</div><div><b>Status:</b> ${esc(i.status)}</div></div>
+    <table><thead><tr><th>Code</th><th>Product</th><th style="text-align:right">Quantity</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="sign"><div>Issued by</div><div>Received by</div><div>Approved by</div></div>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
 /* =========================================================
    SEED DATA + NORMALISATION
 ========================================================= */
@@ -538,10 +350,7 @@ const ALL_PERMS = PERMS.map((p) => p[0]) as Perm[];
 export const DEFAULT_PERMS: Record<Role, Perm[]> = {
   "Super Admin": ALL_PERMS,
   "Sub Admin": ALL_PERMS,
-  Manager: [
-    "product.manage", "stock.receive", "stock.issue", "stock.adjust", "return.manage",
-    "vendor.manage", "employee.manage", "asset.manage", "report.view",
-  ],
+  Manager: ["product.manage", "stock.receive", "stock.issue", "stock.adjust", "return.manage", "vendor.manage", "employee.manage", "asset.manage", "report.view"],
   Receptionist: ["stock.receive", "stock.issue", "return.manage", "report.view"],
 };
 
@@ -549,14 +358,8 @@ export function seedDb(): Db {
   const d = todayStr();
   const base = { createdAt: d, updatedAt: d, phone: "", email: "", manager: "", logo: "" };
   const pBase = {
-    intendedFor: "General" as Audience,
-    packUnit: "Carton",
-    packSize: 0,
-    unitWeightKg: 0,
-    vendorId: "",
-    image: "",
-    status: "Active" as ActiveState,
-    createdAt: d,
+    intendedFor: "General" as Audience, packUnit: "Carton", packSize: 0, unitWeightKg: 0, vendorId: "", image: "",
+    status: "Active" as ActiveState, createdAt: d,
   };
   const products: Product[] = [
     { ...pBase, id: "p-1", code: "ST-001", name: "A4 Paper", category: "Stationery", itemType: "Consumable", baseUnit: "Ream", packSize: 5, unitWeightKg: 2.5, minStock: 10, unitCost: 350, vendorId: "v-1", location: "Main Store" },
@@ -591,22 +394,12 @@ export function seedDb(): Db {
       { id: "v-2", name: "Demo Technology Ltd.", contact: "", phone: "", email: "", address: "", notes: "", status: "Active" },
     ],
     products,
-    receipts: [],
-    issues: [],
-    returns: [],
-    adjustments: [],
-    damages: [],
-    assets: [],
+    receipts: [], issues: [], returns: [], adjustments: [], damages: [], assets: [],
     ledger: products.map((p) => led(p.id, "Opening", openQty[p.id], `OPEN-${p.code}`, "Opening stock", "System", "Initial opening balance", d)),
-    approvals: [],
-    audit: [],
-    achievements: [],
-    counters: {},
+    approvals: [], audit: [], achievements: [], counters: {},
     settings: {
       approvals: { receipt: false, issue: true, adjustment: true, vendorReturn: true, userDeactivate: true },
-      deadStockDays: 60,
-      backupReminderDays: 7,
-      lastBackupAt: "",
+      deadStockDays: 60, backupReminderDays: 7, lastBackupAt: "",
     },
   };
 }
@@ -622,29 +415,12 @@ export function normalizeDb(raw: unknown): Db | null {
   if (!users.length || !Array.isArray(r.products) || !Array.isArray(r.ledger)) return null;
   const base = seedDb();
   return {
-    users,
-    perms: { ...base.perms, ...(r.perms ?? {}) },
-    companies: arr(r.companies),
-    departments: arr(r.departments),
-    employees: arr(r.employees),
-    vendors: arr(r.vendors),
-    products: arr(r.products),
-    receipts: arr(r.receipts),
-    issues: arr(r.issues),
-    returns: arr(r.returns),
-    adjustments: arr(r.adjustments),
-    damages: arr(r.damages),
-    assets: arr(r.assets),
-    ledger: arr(r.ledger),
-    approvals: arr(r.approvals),
-    audit: arr(r.audit),
-    achievements: arr(r.achievements),
-    counters: r.counters ?? {},
-    settings: {
-      ...base.settings,
-      ...(r.settings ?? {}),
-      approvals: { ...base.settings.approvals, ...(r.settings?.approvals ?? {}) },
-    },
+    users, perms: { ...base.perms, ...(r.perms ?? {}) },
+    companies: arr(r.companies), departments: arr(r.departments), employees: arr(r.employees), vendors: arr(r.vendors),
+    products: arr(r.products), receipts: arr(r.receipts), issues: arr(r.issues), returns: arr(r.returns),
+    adjustments: arr(r.adjustments), damages: arr(r.damages), assets: arr(r.assets), ledger: arr(r.ledger),
+    approvals: arr(r.approvals), audit: arr(r.audit), achievements: arr(r.achievements), counters: r.counters ?? {},
+    settings: { ...base.settings, ...(r.settings ?? {}), approvals: { ...base.settings.approvals, ...(r.settings?.approvals ?? {}) } },
   };
 }
 
@@ -657,9 +433,7 @@ function finalizeReceipt(db: Db, id: string): Result {
   if (!r) return fail(db, "Receipt not found.");
   if (r.status === "Received") return fail(db, "This receipt is already finalized.");
   const vendor = db.vendors.find((v) => v.id === r.vendorId)?.name ?? "Vendor";
-  const entries = r.lines.map((l) =>
-    led(l.productId, "Receive", l.qty, r.no, vendor, r.receivedBy, `Challan ${r.challanNo} / Invoice ${r.invoiceNo || "-"}`, r.date)
-  );
+  const entries = r.lines.map((l) => led(l.productId, "Receive", l.qty, r.no, vendor, r.receivedBy, `Challan ${r.challanNo} / Invoice ${r.invoiceNo || "-"}`, r.date));
   const products = db.products.map((p) => {
     const l = r.lines.find((x) => x.productId === p.id && x.unitPrice > 0);
     return l ? { ...p, unitCost: l.unitPrice } : p;
@@ -676,9 +450,7 @@ function finalizeIssue(db: Db, id: string): Result {
   if (i.status !== "Pending Approval") return fail(db, "This issue is not waiting for approval.");
   const st = stockMap(db.ledger);
   for (const l of i.lines) {
-    if (l.qty > (st[l.productId] ?? 0) + EPS) {
-      return fail(db, `Insufficient stock for ${pname(db, l.productId)}. Available: ${st[l.productId] ?? 0}`);
-    }
+    if (l.qty > (st[l.productId] ?? 0) + EPS) return fail(db, `Insufficient stock for ${pname(db, l.productId)}. Available: ${st[l.productId] ?? 0}`);
   }
   const label = recipientLabel(db, i);
   const entries = i.lines.map((l) => led(l.productId, "Issue", -l.qty, i.no, label, i.issuedBy, i.purpose || i.usage, i.date));
@@ -738,55 +510,32 @@ function finalizeUserDeactivate(db: Db, id: string): Result {
 }
 
 const FINALIZERS: Record<ApprovalKind, (db: Db, id: string) => Result> = {
-  receipt: finalizeReceipt,
-  issue: finalizeIssue,
-  adjustment: finalizeAdjustment,
-  vendorReturn: finalizeVendorReturn,
-  userDeactivate: finalizeUserDeactivate,
+  receipt: finalizeReceipt, issue: finalizeIssue, adjustment: finalizeAdjustment,
+  vendorReturn: finalizeVendorReturn, userDeactivate: finalizeUserDeactivate,
 };
 
 function rejectDoc(db: Db, ap: Approval): Db {
   switch (ap.kind) {
-    case "receipt":
-      return { ...db, receipts: upd(db.receipts, ap.refId, { status: "Rejected" }) };
-    case "issue":
-      return { ...db, issues: upd(db.issues, ap.refId, { status: "Rejected" }) };
-    case "adjustment":
-      return { ...db, adjustments: upd(db.adjustments, ap.refId, { status: "Rejected" }) };
-    case "vendorReturn":
-      return { ...db, returns: upd(db.returns, ap.refId, { status: "Rejected" }) };
-    default:
-      return db;
+    case "receipt": return { ...db, receipts: upd(db.receipts, ap.refId, { status: "Rejected" }) };
+    case "issue": return { ...db, issues: upd(db.issues, ap.refId, { status: "Rejected" }) };
+    case "adjustment": return { ...db, adjustments: upd(db.adjustments, ap.refId, { status: "Rejected" }) };
+    case "vendorReturn": return { ...db, returns: upd(db.returns, ap.refId, { status: "Rejected" }) };
+    default: return db;
   }
 }
 
-/** Either finalizes immediately (Super Admin / no rule) or queues an approval request. */
+/** Finalizes immediately (Super Admin / no rule) or queues an approval request. */
 export function routeApproval(db: Db, user: AppUser, kind: ApprovalKind, refId: string, title: string, detail: string): Result {
   if (user.role === "Super Admin" || !db.settings.approvals[kind]) return FINALIZERS[kind](db, refId);
   const ap: Approval = {
-    id: makeId("ap"),
-    kind,
-    refId,
-    title,
-    detail,
-    requestedBy: user.id,
-    requestedByName: user.name,
-    requestedAt: nowIso(),
-    status: "Pending",
-    decidedBy: "",
-    decidedAt: "",
-    comment: "",
+    id: makeId("ap"), kind, refId, title, detail, requestedBy: user.id, requestedByName: user.name, requestedAt: nowIso(),
+    status: "Pending", decidedBy: "", decidedAt: "", comment: "",
   };
   return { db: { ...db, approvals: [ap, ...db.approvals] }, message: `${title} submitted for approval.` };
 }
 
 export function decideApproval(
-  db: Db,
-  id: string,
-  decision: "Approved" | "Rejected",
-  actor: AppUser,
-  canApprove: boolean,
-  comment: string
+  db: Db, id: string, decision: "Approved" | "Rejected", actor: AppUser, canApprove: boolean, comment: string
 ): Result {
   const ap = db.approvals.find((a) => a.id === id);
   if (!ap || ap.status !== "Pending") return fail(db, "This request is no longer pending.");
@@ -808,8 +557,7 @@ export function decideApproval(
 }
 
 export function createReceipt(
-  db: Db,
-  user: AppUser,
+  db: Db, user: AppUser,
   f: { vendorId: string; date: string; invoiceNo: string; challanNo: string; challanImage: string; receivedBy: string; destination: string; notes: string; lines: ReceiptLine[] }
 ): Result {
   if (!f.vendorId) return fail(db, "Select a vendor.");
@@ -824,21 +572,14 @@ export function createReceipt(
   if (dup) return fail(db, "This challan number is already recorded for this vendor.");
   const { db: d1, no } = withNo(db, "GRN");
   const doc: Receipt = {
-    id: makeId("rc"),
-    no,
-    ...f,
-    invoiceNo: f.invoiceNo.trim(),
-    challanNo: f.challanNo.trim(),
-    receivedBy: f.receivedBy.trim(),
-    status: "Pending Approval",
-    createdBy: user.name,
+    id: makeId("rc"), no, ...f, invoiceNo: f.invoiceNo.trim(), challanNo: f.challanNo.trim(),
+    receivedBy: f.receivedBy.trim(), status: "Pending Approval", createdBy: user.name,
   };
   return routeApproval({ ...d1, receipts: [doc, ...d1.receipts] }, user, "receipt", doc.id, `Receipt ${no}`, `${f.lines.length} product line(s), challan ${doc.challanNo}`);
 }
 
 export function createIssue(
-  db: Db,
-  user: AppUser,
+  db: Db, user: AppUser,
   f: {
     recipientType: RecipientType; usage: Usage; employeeId: string; departmentId: string; recipientName: string; recipientOrg: string;
     event: string; purpose: string; date: string; issuedBy: string; handover: "Direct" | "Intermediary"; intermediary: string; notes: string;
@@ -863,27 +604,13 @@ export function createIssue(
   const employeeId = f.recipientType === "Employee" || (f.recipientType === "Department" && emp) ? f.employeeId : "";
   const { db: d1, no } = withNo(db, "ISS");
   const doc: Issue = {
-    id: makeId("is"),
-    no,
-    date: f.date || todayStr(),
-    recipientType: f.recipientType,
-    usage,
-    employeeId,
-    departmentId: f.recipientType === "Department" ? f.departmentId : "",
-    recipientName: f.recipientName.trim(),
-    recipientOrg: f.recipientOrg.trim(),
-    event: f.event.trim(),
-    purpose: f.purpose.trim(),
+    id: makeId("is"), no, date: f.date || todayStr(), recipientType: f.recipientType, usage, employeeId,
+    departmentId: f.recipientType === "Department" ? f.departmentId : "", recipientName: f.recipientName.trim(),
+    recipientOrg: f.recipientOrg.trim(), event: f.event.trim(), purpose: f.purpose.trim(),
     lines: f.lines.map((l) => ({ productId: l.productId, qty: l.qty, unitCost: db.products.find((p) => p.id === l.productId)?.unitCost ?? 0, returnedQty: 0, lostQty: 0 })),
-    issuedBy: f.issuedBy.trim(),
-    handover: f.handover,
-    intermediary: f.handover === "Intermediary" ? f.intermediary.trim() : "",
-    notes: f.notes.trim(),
-    status: "Pending Approval",
-    pin: employeeId ? String(1000 + Math.floor(Math.random() * 9000)) : "",
-    ackAt: "",
-    ackBy: "",
-    createdBy: user.name,
+    issuedBy: f.issuedBy.trim(), handover: f.handover, intermediary: f.handover === "Intermediary" ? f.intermediary.trim() : "",
+    notes: f.notes.trim(), status: "Pending Approval", pin: employeeId ? String(1000 + Math.floor(Math.random() * 9000)) : "",
+    ackAt: "", ackBy: "", createdBy: user.name,
   };
   return routeApproval({ ...d1, issues: [doc, ...d1.issues] }, user, "issue", doc.id, `Distribution ${no}`, `${recipientLabel(d1, doc)} · ${doc.lines.length} product line(s) · ${usage}`);
 }
@@ -906,9 +633,7 @@ export function reverseIssue(db: Db, id: string, by: string, reason: string): Re
 }
 
 export function createAdjustment(
-  db: Db,
-  user: AppUser,
-  f: { productId: string; kind: AdjKind; qty: number; reason: string; date: string }
+  db: Db, user: AppUser, f: { productId: string; kind: AdjKind; qty: number; reason: string; date: string }
 ): Result {
   const p = db.products.find((x) => x.id === f.productId);
   if (!p) return fail(db, "Select a product.");
@@ -920,6 +645,26 @@ export function createAdjustment(
   return routeApproval({ ...d1, adjustments: [doc, ...d1.adjustments] }, user, "adjustment", doc.id, `${f.kind} ${no}`, `${f.qty} ${p.baseUnit} · ${p.name}`);
 }
 
+/** Turns physical count differences into adjustment requests (approval rules still apply). */
+export function createStockTake(db: Db, user: AppUser, counts: { productId: string; counted: number }[]): Result {
+  const st = stockMap(db.ledger);
+  const diffs = counts
+    .filter((c) => c.counted >= 0 && Math.abs(round3(c.counted - (st[c.productId] ?? 0))) > EPS)
+    .map((c) => ({ ...c, system: st[c.productId] ?? 0 }));
+  if (!diffs.length) return fail(db, "No differences found. Enter counted quantities that differ from the system.");
+  let cur = db;
+  for (const d of diffs) {
+    const diff = round3(d.counted - d.system);
+    const r = createAdjustment(cur, user, {
+      productId: d.productId, kind: diff > 0 ? "Increase" : "Decrease", qty: Math.abs(diff),
+      reason: `Stock take: counted ${d.counted}, system ${d.system}`, date: todayStr(),
+    });
+    if (r.error) return r;
+    cur = r.db;
+  }
+  return { db: cur, message: `Stock take submitted: ${diffs.length} difference(s).` };
+}
+
 function openLines(db: Db, employeeId: string, productId: string) {
   return employeePossession(db, employeeId)
     .filter((r) => r.line.productId === productId)
@@ -927,8 +672,7 @@ function openLines(db: Db, employeeId: string, productId: string) {
 }
 
 export function recordEmployeeReturn(
-  db: Db,
-  user: AppUser,
+  db: Db, user: AppUser,
   f: { employeeId: string; date: string; reason: string; receivedBy: string; notes: string; lines: { productId: string; qty: number; condition: string }[] }
 ): Result {
   const emp = db.employees.find((e) => e.id === f.employeeId);
@@ -951,14 +695,12 @@ export function recordEmployeeReturn(
       remaining = round3(remaining - take);
       alloc.push({ issueId: o.issue.id, idx: o.idx, qty: take });
       issues = issues.map((i) =>
-        i.id !== o.issue.id
-          ? i
-          : {
-              ...i,
-              lines: i.lines.map((ln, k) =>
-                k !== o.idx ? ln : l.condition === "Lost" ? { ...ln, lostQty: round3(ln.lostQty + take) } : { ...ln, returnedQty: round3(ln.returnedQty + take) }
-              ),
-            }
+        i.id !== o.issue.id ? i : {
+          ...i,
+          lines: i.lines.map((ln, k) =>
+            k !== o.idx ? ln : l.condition === "Lost" ? { ...ln, lostQty: round3(ln.lostQty + take) } : { ...ln, returnedQty: round3(ln.returnedQty + take) }
+          ),
+        }
       );
     }
     if (remaining > EPS) return fail(db, `${p.name}: this employee holds only ${round3(l.qty - remaining)} ${p.baseUnit}.`);
@@ -969,21 +711,9 @@ export function recordEmployeeReturn(
     lines.push({ productId: p.id, qty: l.qty, condition: l.condition, alloc });
   }
   const doc: ReturnDoc = {
-    id: makeId("rt"),
-    no,
-    date: f.date || todayStr(),
-    source: "Employee",
-    employeeId: emp.id,
-    vendorId: "",
-    receiptId: "",
-    lines,
-    reason: f.reason.trim(),
-    receivedBy: f.receivedBy.trim(),
-    notes: f.notes.trim(),
-    status: lines.some((l) => l.condition === "Damaged") ? "Pending Inspection" : "Completed",
-    creditAmount: 0,
-    inspection: "",
-    createdBy: user.name,
+    id: makeId("rt"), no, date: f.date || todayStr(), source: "Employee", employeeId: emp.id, vendorId: "", receiptId: "", lines,
+    reason: f.reason.trim(), receivedBy: f.receivedBy.trim(), notes: f.notes.trim(),
+    status: lines.some((l) => l.condition === "Damaged") ? "Pending Inspection" : "Completed", creditAmount: 0, inspection: "", createdBy: user.name,
   };
   return {
     db: { ...d1, issues, returns: [doc, ...d1.returns], ledger: [...d1.ledger, ...ledger], damages: [...d1.damages, ...damages] },
@@ -1019,8 +749,7 @@ export function inspectReturn(db: Db, id: string, decision: "Write off" | "Resto
 }
 
 export function createVendorReturn(
-  db: Db,
-  user: AppUser,
+  db: Db, user: AppUser,
   f: { vendorId: string; receiptId: string; date: string; reason: string; receivedBy: string; notes: string; lines: { productId: string; qty: number; condition: string }[] }
 ): Result {
   const receipt = db.receipts.find((r) => r.id === f.receiptId && r.status === "Received" && r.vendorId === f.vendorId);
@@ -1038,21 +767,9 @@ export function createVendorReturn(
   }
   const { db: d1, no } = withNo(db, "VRT");
   const doc: ReturnDoc = {
-    id: makeId("rt"),
-    no,
-    date: f.date || todayStr(),
-    source: "Vendor",
-    employeeId: "",
-    vendorId: f.vendorId,
-    receiptId: receipt.id,
-    lines: f.lines.map((l) => ({ ...l, alloc: [] })),
-    reason: f.reason.trim(),
-    receivedBy: f.receivedBy.trim(),
-    notes: f.notes.trim(),
-    status: "Pending Approval",
-    creditAmount: 0,
-    inspection: "",
-    createdBy: user.name,
+    id: makeId("rt"), no, date: f.date || todayStr(), source: "Vendor", employeeId: "", vendorId: f.vendorId, receiptId: receipt.id,
+    lines: f.lines.map((l) => ({ ...l, alloc: [] })), reason: f.reason.trim(), receivedBy: f.receivedBy.trim(), notes: f.notes.trim(),
+    status: "Pending Approval", creditAmount: 0, inspection: "", createdBy: user.name,
   };
   return routeApproval({ ...d1, returns: [doc, ...d1.returns] }, user, "vendorReturn", doc.id, `Vendor return ${no}`, `${doc.lines.length} line(s) against ${receipt.no}`);
 }
@@ -1147,10 +864,7 @@ export function useApp() {
       }
       let next = r.db;
       if (audit) {
-        next = {
-          ...next,
-          audit: [...next.audit, { id: makeId("a"), at: nowIso(), userId: actor.id, userName: actor.name, role: actor.role, ...audit }],
-        };
+        next = { ...next, audit: [...next.audit, { id: makeId("a"), at: nowIso(), userId: actor.id, userName: actor.name, role: actor.role, ...audit }] };
       }
       dbRef.current = next;
       setDb(next);
@@ -1166,16 +880,18 @@ export function useApp() {
 
 /* =========================================================
    UI KIT (shared by all modules)
+   The keyframes "pidsIn" are defined in page.tsx.
 ========================================================= */
 
+export const fadeIn = "animate-[pidsIn_0.35s_ease-out]";
 export const inputCls =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
 export const btnPrimary =
-  "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
 export const btnGhost =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
 export const btnDanger =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
 export const td = "px-3 py-3 align-top";
 
 type FormEl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
@@ -1197,19 +913,19 @@ export function Field({ label, children, className = "" }: { label: string; chil
 
 export function Badge({ children }: { children: ReactNode }) {
   const v = String(children).toLowerCase();
-  const tone = /reject|lost|damag|left|inactive|disposed|reversed|low stock|dead|expired/.test(v)
-    ? "bg-rose-50 text-rose-700"
+  const tone = /reject|lost|damag|left|inactive|disposed|reversed|low|dead|expired/.test(v)
+    ? "bg-rose-50 text-rose-700 ring-rose-200"
     : /pending|await|inspection|repair|poor|expiring|fair/.test(v)
-      ? "bg-amber-50 text-amber-700"
-      : /active|received|approved|complete|applied|credited|acknowledged|assigned|issued|good|new|returned|in store/.test(v)
-        ? "bg-emerald-50 text-emerald-700"
-        : "bg-slate-100 text-slate-600";
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>{children}</span>;
+      ? "bg-amber-50 text-amber-700 ring-amber-200"
+      : /active|received|approved|complete|applied|credited|acknowledged|assigned|issued|good|new|returned|in store|yes|always|granted/.test(v)
+        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+        : "bg-slate-100 text-slate-600 ring-slate-200";
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${tone}`}>{children}</span>;
 }
 
 export function Section({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <div className={`flex flex-col justify-between gap-3 sm:flex-row sm:items-center ${fadeIn}`}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
@@ -1221,9 +937,9 @@ export function Section({ title, subtitle, action }: { title: string; subtitle?:
 
 export function Card({ title, subtitle, action, children }: { title?: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${fadeIn}`}>
       {(title || action) && (
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             {title && <h2 className="font-semibold text-slate-900">{title}</h2>}
             {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
@@ -1236,15 +952,48 @@ export function Card({ title, subtitle, action, children }: { title?: string; su
   );
 }
 
-export function Stat({ title, value, detail, tone = "blue" }: { title: string; value: string; detail?: string; tone?: "blue" | "amber" | "rose" | "emerald" | "violet" }) {
-  const tones = { blue: "text-blue-600 bg-blue-50", amber: "text-amber-600 bg-amber-50", rose: "text-rose-600 bg-rose-50", emerald: "text-emerald-600 bg-emerald-50", violet: "text-violet-600 bg-violet-50" };
+/** Smoothly counts a number up to its value. */
+export function CountUp({ value, format }: { value: number; format?: (n: number) => string }) {
+  const [shown, setShown] = useState(0);
+  const from = useRef(0);
+  useEffect(() => {
+    const start = performance.now();
+    const a = from.current;
+    let raf = 0;
+    const step = (t: number) => {
+      const p = Math.min(1, (t - start) / 700);
+      const cur = a + (value - a) * (1 - Math.pow(1 - p, 3));
+      from.current = cur;
+      setShown(cur);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{(format ?? ((n: number) => Math.round(n).toLocaleString()))(shown)}</>;
+}
+
+export type Tone = "blue" | "amber" | "rose" | "emerald" | "violet";
+const TONES: Record<Tone, { box: string; text: string }> = {
+  blue: { box: "bg-blue-50 text-blue-600", text: "text-slate-900" },
+  amber: { box: "bg-amber-50 text-amber-600", text: "text-amber-700" },
+  rose: { box: "bg-rose-50 text-rose-600", text: "text-rose-700" },
+  emerald: { box: "bg-emerald-50 text-emerald-600", text: "text-slate-900" },
+  violet: { box: "bg-violet-50 text-violet-600", text: "text-slate-900" },
+};
+
+export function Stat({
+  title, value, detail, tone = "blue", icon, format,
+}: { title: string; value: string | number; detail?: string; tone?: Tone; icon?: ReactNode; format?: (n: number) => string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${fadeIn}`}>
+      <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-slate-500">{title}</p>
-        <span className={`h-2.5 w-2.5 rounded-full ${tones[tone].split(" ")[1]} ring-4 ring-offset-0 ${tones[tone].split(" ")[1]}`} />
+        <span className={`rounded-xl p-2.5 ${TONES[tone].box}`}>{icon ?? <Activity size={18} />}</span>
       </div>
-      <p className={`mt-3 break-words text-2xl font-bold tracking-tight ${tones[tone].split(" ")[0]}`}>{value}</p>
+      <p className={`mt-3 break-words text-2xl font-bold tracking-tight ${TONES[tone].text}`}>
+        {typeof value === "number" ? <CountUp value={value} format={format} /> : value}
+      </p>
       {detail && <p className="mt-2 text-xs text-slate-500">{detail}</p>}
     </div>
   );
@@ -1253,9 +1002,7 @@ export function Stat({ title, value, detail, tone = "blue" }: { title: string; v
 export function Empty({ text }: { text: string }) {
   return (
     <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-      <div className="rounded-xl bg-slate-100 p-3 text-slate-400">
-        <Package size={22} />
-      </div>
+      <div className="rounded-2xl bg-slate-100 p-3 text-slate-400"><Package size={22} /></div>
       <p className="text-sm text-slate-500">{text}</p>
     </div>
   );
@@ -1263,7 +1010,7 @@ export function Empty({ text }: { text: string }) {
 
 export function Img({ src, alt, className = "h-12 w-12" }: { src: string; alt: string; className?: string }) {
   return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 ${className}`}>
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${className}`}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt} className="h-full w-full object-cover" />
@@ -1277,14 +1024,10 @@ export function Img({ src, alt, className = "h-12 w-12" }: { src: string; alt: s
 export function Table({ heads, children, min = 900, empty }: { heads: string[]; children: ReactNode; min?: number; empty?: string }) {
   const hasRows = Array.isArray(children) ? children.length > 0 : Boolean(children);
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl">
       <table className="w-full text-left text-sm" style={{ minWidth: min }}>
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
-          <tr>
-            {heads.map((h) => (
-              <th key={h} className="px-3 py-3 font-semibold">{h}</th>
-            ))}
-          </tr>
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <tr>{heads.map((h) => <th key={h} className="px-3 py-3 font-semibold">{h}</th>)}</tr>
         </thead>
         <tbody className="divide-y divide-slate-100">{children}</tbody>
       </table>
@@ -1295,7 +1038,42 @@ export function Table({ heads, children, min = 900, empty }: { heads: string[]; 
 
 export function Notice({ children, tone = "blue" }: { children: ReactNode; tone?: "blue" | "amber" }) {
   const t = tone === "blue" ? "border-blue-200 bg-blue-50 text-blue-800" : "border-amber-200 bg-amber-50 text-amber-900";
-  return <div className={`rounded-xl border px-4 py-3 text-sm leading-6 ${t}`}>{children}</div>;
+  return <div className={`rounded-xl border px-4 py-3 text-sm leading-6 ${t} ${fadeIn}`}>{children}</div>;
+}
+
+export function SearchBox({ value, onChange, placeholder = "Search..." }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div className="relative">
+      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <input className={`${inputCls} pl-9`} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </div>
+  );
+}
+
+export function Tabs<T extends string>({
+  tabs, value, onChange,
+}: { tabs: { id: T; label: string; icon: typeof Package; badge?: number }[]; value: T; onChange: (t: T) => void }) {
+  return (
+    <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+      {tabs.map((t) => {
+        const Icon = t.icon;
+        const on = value === t.id;
+        return (
+          <button
+            key={t.id}
+            onClick={() => onChange(t.id)}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              on ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Icon size={16} />
+            {t.label}
+            {!!t.badge && <span className={`rounded-full px-1.5 text-xs font-bold ${on ? "bg-white/25" : "bg-amber-100 text-amber-800"}`}>{t.badge}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 /* ---------- multi-product line editor ---------- */
@@ -1311,13 +1089,8 @@ export const toBase = (l: FormLine, products: Product[]) => {
 export function LineEditor({
   lines, setLines, products, stock, showPrice, conditions, defaultCondition = "",
 }: {
-  lines: FormLine[];
-  setLines: (l: FormLine[]) => void;
-  products: Product[];
-  stock?: Record<string, number>;
-  showPrice?: boolean;
-  conditions?: string[];
-  defaultCondition?: string;
+  lines: FormLine[]; setLines: (l: FormLine[]) => void; products: Product[]; stock?: Record<string, number>;
+  showPrice?: boolean; conditions?: string[]; defaultCondition?: string;
 }) {
   const set = (i: number, patch: Partial<FormLine>) => setLines(lines.map((l, k) => (k === i ? { ...l, ...patch } : l)));
   return (
@@ -1325,13 +1098,12 @@ export function LineEditor({
       {lines.map((l, i) => {
         const p = products.find((x) => x.id === l.productId);
         return (
-          <div key={i} className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-12">
+          <div key={i} className={`grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-12 ${fadeIn}`}>
             <select className={`${inputCls} sm:col-span-4`} value={l.productId} onChange={(e) => set(i, { productId: e.target.value, mode: "unit" })}>
               <option value="">Select product</option>
               {products.map((x) => (
                 <option key={x.id} value={x.id}>
-                  {x.code} — {x.name}
-                  {stock ? ` (${stock[x.id] ?? 0} ${x.baseUnit})` : ""}
+                  {x.code} — {x.name}{stock ? ` (${stock[x.id] ?? 0} ${x.baseUnit})` : ""}
                 </option>
               ))}
             </select>
@@ -1340,14 +1112,10 @@ export function LineEditor({
               <option value="unit">{p?.baseUnit ?? "Unit"}</option>
               {p && p.packSize > 0 && <option value="pack">{p.packUnit} ({p.packSize})</option>}
             </select>
-            {showPrice && (
-              <input type="number" min="0" step="any" className={`${inputCls} sm:col-span-3`} value={l.price} onChange={(e) => set(i, { price: e.target.value })} placeholder="Unit price (BDT)" />
-            )}
+            {showPrice && <input type="number" min="0" step="any" className={`${inputCls} sm:col-span-3`} value={l.price} onChange={(e) => set(i, { price: e.target.value })} placeholder="Unit price (BDT)" />}
             {conditions && (
               <select className={`${inputCls} sm:col-span-3`} value={l.condition} onChange={(e) => set(i, { condition: e.target.value })}>
-                {conditions.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
+                {conditions.map((c) => <option key={c}>{c}</option>)}
               </select>
             )}
             <button type="button" aria-label="Remove line" className={`${btnDanger} sm:col-span-1`} disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, k) => k !== i))}>
@@ -1367,51 +1135,37 @@ export function LineEditor({
    INVENTORY MODULE
 ========================================================= */
 
-type Tab = "overview" | "products" | "receiving" | "distribution" | "returns" | "vendors" | "ledger" | "reports";
-
-const TABS: { id: Tab; label: string; icon: typeof Package }[] = [
-  { id: "overview", label: "Overview", icon: Activity },
-  { id: "products", label: "Products", icon: Package },
-  { id: "receiving", label: "Receiving", icon: ArrowDownToLine },
-  { id: "distribution", label: "Distribution", icon: ArrowUpFromLine },
-  { id: "returns", label: "Returns", icon: RotateCcw },
-  { id: "vendors", label: "Vendors", icon: Truck },
-  { id: "ledger", label: "Ledger & Adjustments", icon: History },
-  { id: "reports", label: "Reports", icon: BarChart3 },
-];
+type Tab = "overview" | "products" | "receiving" | "distribution" | "returns" | "vendors" | "ledger" | "stocktake" | "reports";
 
 export default function InventoryManagement({ ctx }: { ctx: Ctx }) {
   const [tab, setTab] = useState<Tab>("overview");
-  const visible = TABS.filter((t) => t.id !== "reports" || ctx.can("report.view"));
+  const { db, stock } = ctx;
+  const tabs: { id: Tab; label: string; icon: typeof Package; badge?: number }[] = [
+    { id: "overview", label: "Overview", icon: Activity },
+    { id: "products", label: "Products", icon: Package, badge: lowStock(db, stock).length },
+    { id: "receiving", label: "Receiving", icon: ArrowDownToLine },
+    { id: "distribution", label: "Distribution", icon: ArrowUpFromLine, badge: db.issues.filter((i) => i.status === "Awaiting Acknowledgement").length },
+    { id: "returns", label: "Returns", icon: RotateCcw, badge: db.returns.filter((r) => r.status === "Pending Inspection").length },
+    { id: "vendors", label: "Vendors", icon: Truck },
+    { id: "ledger", label: "Ledger", icon: History },
+    { id: "stocktake", label: "Stock Take", icon: ClipboardCheck },
+    ...(ctx.can("report.view") ? [{ id: "reports" as Tab, label: "Reports", icon: BarChart3 }] : []),
+  ];
   return (
     <div className="space-y-6">
       <Section title="Inventory Management" subtitle="Products, receiving with challan, distribution, returns, vendors, ledger and reports." />
-      <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-2">
-        {visible.map((t) => {
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
-                tab === t.id ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-white hover:text-slate-900"
-              }`}
-            >
-              <Icon size={16} />
-              {t.label}
-            </button>
-          );
-        })}
+      <Tabs tabs={tabs} value={tab} onChange={setTab} />
+      <div key={tab} className={`space-y-6 ${fadeIn}`}>
+        {tab === "overview" && <OverviewTab ctx={ctx} go={setTab} />}
+        {tab === "products" && <ProductsTab ctx={ctx} />}
+        {tab === "receiving" && <ReceivingTab ctx={ctx} />}
+        {tab === "distribution" && <DistributionTab ctx={ctx} />}
+        {tab === "returns" && <ReturnsTab ctx={ctx} />}
+        {tab === "vendors" && <VendorsTab ctx={ctx} />}
+        {tab === "ledger" && <LedgerTab ctx={ctx} />}
+        {tab === "stocktake" && <StockTakeTab ctx={ctx} />}
+        {tab === "reports" && <ReportsTab ctx={ctx} />}
       </div>
-
-      {tab === "overview" && <OverviewTab ctx={ctx} go={setTab} />}
-      {tab === "products" && <ProductsTab ctx={ctx} />}
-      {tab === "receiving" && <ReceivingTab ctx={ctx} />}
-      {tab === "distribution" && <DistributionTab ctx={ctx} />}
-      {tab === "returns" && <ReturnsTab ctx={ctx} />}
-      {tab === "vendors" && <VendorsTab ctx={ctx} />}
-      {tab === "ledger" && <LedgerTab ctx={ctx} />}
-      {tab === "reports" && <ReportsTab ctx={ctx} />}
     </div>
   );
 }
@@ -1429,23 +1183,41 @@ function OverviewTab({ ctx, go }: { ctx: Ctx; go: (t: Tab) => void }) {
   const rows = [
     { t: "Issues awaiting employee acknowledgement", n: awaiting, tab: "distribution" as Tab },
     { t: "Returns pending inspection", n: inspect, tab: "returns" as Tab },
-    { t: "Requests pending approval", n: pending, tab: "overview" as Tab },
+    { t: "Requests pending approval (see Approvals page)", n: pending, tab: "overview" as Tab },
     { t: "Products at or below minimum stock", n: low.length, tab: "products" as Tab },
-    { t: "Dead / slow-moving products", n: dead.length, tab: "reports" as Tab },
+    { t: "Dead / slow-moving products", n: dead.length, tab: ctx.can("report.view") ? ("reports" as Tab) : ("products" as Tab) },
+  ];
+  const quick = [
+    { label: "Receive stock", icon: ArrowDownToLine, tab: "receiving" as Tab },
+    { label: "Distribute", icon: ArrowUpFromLine, tab: "distribution" as Tab },
+    { label: "Record return", icon: RotateCcw, tab: "returns" as Tab },
+    { label: "Stock take", icon: ClipboardCheck, tab: "stocktake" as Tab },
   ];
   return (
-    <div className="space-y-6">
+    <>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {quick.map((q) => {
+          const Icon = q.icon;
+          return (
+            <button key={q.label} onClick={() => go(q.tab)} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md">
+              <span className="rounded-xl bg-blue-50 p-2.5 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white"><Icon size={18} /></span>
+              <span className="flex-1 text-sm font-semibold text-slate-800">{q.label}</span>
+              <Zap size={15} className="text-slate-300 group-hover:text-blue-500" />
+            </button>
+          );
+        })}
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat title="Active Products" value={String(db.products.filter((p) => p.status === "Active").length)} detail={`${db.products.length} total records`} />
-        <Stat title="Stock Value" value={money(value)} detail="Quantity × latest unit cost" tone="violet" />
-        <Stat title="Low Stock" value={String(low.length)} detail="At or below minimum" tone="amber" />
-        <Stat title="Dead Stock" value={String(dead.length)} detail={`No issue for ${db.settings.deadStockDays}+ days`} tone="rose" />
+        <Stat title="Active Products" value={db.products.filter((p) => p.status === "Active").length} detail={`${db.products.length} total records`} icon={<Package size={18} />} />
+        <Stat title="Stock Value" value={value} format={money} detail="Quantity × latest unit cost" tone="violet" icon={<BarChart3 size={18} />} />
+        <Stat title="Low Stock" value={low.length} detail="At or below minimum" tone="amber" icon={<AlertTriangle size={18} />} />
+        <Stat title="Dead Stock" value={dead.length} detail={`No issue for ${db.settings.deadStockDays}+ days`} tone="rose" icon={<History size={18} />} />
       </div>
       <div className="grid gap-6 xl:grid-cols-2">
         <Card title="Pending Actions" subtitle="Items that need follow-up">
           <div className="space-y-2">
             {rows.map((r) => (
-              <button key={r.t} onClick={() => go(r.tab)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm hover:bg-blue-50/40">
+              <button key={r.t} onClick={() => go(r.tab)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm transition hover:border-blue-200 hover:bg-blue-50/40">
                 <span className="font-medium text-slate-700">{r.t}</span>
                 <span className={`rounded-lg px-3 py-1 text-sm font-semibold ${r.n > 0 ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>{r.n}</span>
               </button>
@@ -1453,16 +1225,11 @@ function OverviewTab({ ctx, go }: { ctx: Ctx; go: (t: Tab) => void }) {
           </div>
         </Card>
         <Card title="Low Stock Alerts" action={<AlertTriangle size={20} className="text-amber-500" />}>
-          {low.length === 0 ? (
-            <Empty text="No low-stock products right now." />
-          ) : (
+          {low.length === 0 ? <Empty text="No low-stock products right now." /> : (
             <div className="space-y-2">
               {low.map((p) => (
                 <div key={p.id} className="flex items-center justify-between rounded-xl bg-amber-50 p-3 text-sm">
-                  <div>
-                    <p className="font-semibold text-slate-800">{p.name}</p>
-                    <p className="text-xs text-slate-500">{p.code} · min {p.minStock} {p.baseUnit}</p>
-                  </div>
+                  <div><p className="font-semibold text-slate-800">{p.name}</p><p className="text-xs text-slate-500">{p.code} · min {p.minStock} {p.baseUnit}</p></div>
                   <span className="font-semibold text-amber-700">{stock[p.id] ?? 0} {p.baseUnit}</span>
                 </div>
               ))}
@@ -1473,7 +1240,7 @@ function OverviewTab({ ctx, go }: { ctx: Ctx; go: (t: Tab) => void }) {
       <Card title="Recent Stock Activity">
         <Table heads={["Date", "Product", "Type", "Change", "Reference", "Party"]} min={700} empty="No transactions yet.">
           {[...db.ledger].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8).map((e) => (
-            <tr key={e.id}>
+            <tr key={e.id} className="hover:bg-slate-50">
               <td className={td}>{e.date}</td>
               <td className={`${td} font-medium`}>{pname(db, e.productId)}</td>
               <td className={td}>{e.type}</td>
@@ -1484,7 +1251,7 @@ function OverviewTab({ ctx, go }: { ctx: Ctx; go: (t: Tab) => void }) {
           ))}
         </Table>
       </Card>
-    </div>
+    </>
   );
 }
 
@@ -1507,6 +1274,8 @@ function ProductsTab({ ctx }: { ctx: Ctx }) {
   const [f, setF] = useState(blankProduct);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
+  const [cat, setCat] = useState("All");
+  const [hist, setHist] = useState<string | null>(null);
   const categories = useMemo(() => Array.from(new Set([...DEFAULT_CATEGORIES, ...db.products.map((p) => p.category)])), [db.products]);
 
   function edit(p: Product) {
@@ -1556,11 +1325,11 @@ function ProductsTab({ ctx }: { ctx: Ctx }) {
   }
 
   const filtered = db.products.filter(
-    (p) => (status === "All" || p.status === status) && `${p.code} ${p.name} ${p.category} ${p.location}`.toLowerCase().includes(q.toLowerCase())
+    (p) => (status === "All" || p.status === status) && (cat === "All" || p.category === cat) && `${p.code} ${p.name} ${p.category} ${p.location}`.toLowerCase().includes(q.toLowerCase())
   );
 
   return (
-    <div className="space-y-5">
+    <>
       <Section
         title="Product Catalogue"
         subtitle="Codes, categories, packaging (cartons / kg), minimum stock and cost."
@@ -1586,26 +1355,16 @@ function ProductsTab({ ctx }: { ctx: Ctx }) {
               <input list="pids-categories" className={inputCls} {...bind(f, setF, "category")} />
               <datalist id="pids-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
             </Field>
-            <Field label="Item Type">
-              <select className={inputCls} {...bind(f, setF, "itemType")}><option>Consumable</option><option>Reusable Asset</option></select>
-            </Field>
-            <Field label="Intended For">
-              <select className={inputCls} {...bind(f, setF, "intendedFor")}><option>General</option><option>Employee</option><option>Client</option><option>Guest</option><option>Event</option></select>
-            </Field>
-            <Field label="Base Unit">
-              <select className={inputCls} {...bind(f, setF, "baseUnit")}>{UNITS.map((u) => <option key={u}>{u}</option>)}</select>
-            </Field>
-            <Field label="Pack Type">
-              <select className={inputCls} {...bind(f, setF, "packUnit")}>{PACK_UNITS.map((u) => <option key={u}>{u}</option>)}</select>
-            </Field>
+            <Field label="Item Type"><select className={inputCls} {...bind(f, setF, "itemType")}><option>Consumable</option><option>Reusable Asset</option></select></Field>
+            <Field label="Intended For"><select className={inputCls} {...bind(f, setF, "intendedFor")}><option>General</option><option>Employee</option><option>Client</option><option>Guest</option><option>Event</option></select></Field>
+            <Field label="Base Unit"><select className={inputCls} {...bind(f, setF, "baseUnit")}>{UNITS.map((u) => <option key={u}>{u}</option>)}</select></Field>
+            <Field label="Pack Type"><select className={inputCls} {...bind(f, setF, "packUnit")}>{PACK_UNITS.map((u) => <option key={u}>{u}</option>)}</select></Field>
             <Field label="Units per Pack (0 = not packed)"><input type="number" min="0" step="any" className={inputCls} {...bind(f, setF, "packSize")} /></Field>
             <Field label="Weight per Unit (kg, 0 = n/a)"><input type="number" min="0" step="any" className={inputCls} {...bind(f, setF, "unitWeightKg")} /></Field>
             <Field label="Minimum Stock"><input type="number" min="0" step="any" className={inputCls} {...bind(f, setF, "minStock")} /></Field>
             <Field label="Unit Cost (BDT)"><input type="number" min="0" step="any" className={inputCls} {...bind(f, setF, "unitCost")} /></Field>
             {!editing && <Field label="Opening Stock"><input type="number" min="0" step="any" className={inputCls} {...bind(f, setF, "openingStock")} /></Field>}
-            <Field label="Default Vendor">
-              <select className={inputCls} {...bind(f, setF, "vendorId")}><option value="">None</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>
-            </Field>
+            <Field label="Default Vendor"><select className={inputCls} {...bind(f, setF, "vendorId")}><option value="">None</option>{db.vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>
             <Field label="Storage Location"><input className={inputCls} {...bind(f, setF, "location")} /></Field>
             <Field label="Status"><select className={inputCls} {...bind(f, setF, "status")}><option>Active</option><option>Inactive</option></select></Field>
             <div className="sm:col-span-2 lg:col-span-3"><ImageUpload label="Product Image" value={f.image} onChange={(v) => setF({ ...f, image: v })} /></div>
@@ -1620,20 +1379,19 @@ function ProductsTab({ ctx }: { ctx: Ctx }) {
       <Card
         title={`Products (${filtered.length})`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <select className={inputCls} value={cat} onChange={(e) => setCat(e.target.value)}><option>All</option>{categories.map((c) => <option key={c}>{c}</option>)}</select>
             <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}><option>All</option><option>Active</option><option>Inactive</option></select>
-            <div className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input className={`${inputCls} pl-9`} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search..." /></div>
+            <SearchBox value={q} onChange={setQ} />
           </div>
         }
       >
         <Table heads={["Product", "Category / Type", "Stock (packs)", "Total kg", "Min", "Unit cost", "Value", "Vendor", "Status", "Actions"]} min={1150} empty="No products match.">
-          {filtered.map((p) => {
+          {filtered.flatMap((p) => {
             const s = stock[p.id] ?? 0;
-            return (
+            const row = (
               <tr key={p.id} className="hover:bg-slate-50">
-                <td className={td}>
-                  <div className="flex items-center gap-3"><Img src={p.image} alt={p.name} /><div><p className="font-semibold text-slate-900">{p.name}</p><p className="text-xs text-slate-500">{p.code}</p></div></div>
-                </td>
+                <td className={td}><div className="flex items-center gap-3"><Img src={p.image} alt={p.name} /><div><p className="font-semibold text-slate-900">{p.name}</p><p className="text-xs text-slate-500">{p.code}</p></div></div></td>
                 <td className={td}><p>{p.category}</p><p className="text-xs text-slate-500">{p.itemType} · for {p.intendedFor}</p></td>
                 <td className={`${td} font-semibold ${s <= p.minStock ? "text-rose-600" : ""}`}>{packText(p, s)}</td>
                 <td className={td}>{weightOf(p, s) || "—"}</td>
@@ -1643,17 +1401,33 @@ function ProductsTab({ ctx }: { ctx: Ctx }) {
                 <td className={td}>{db.vendors.find((v) => v.id === p.vendorId)?.name ?? "—"}</td>
                 <td className={td}><Badge>{p.status}</Badge></td>
                 <td className={td}>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button className={btnGhost} onClick={() => setHist(hist === p.id ? null : p.id)}>{hist === p.id ? "Hide" : "History"}</button>
                     <button className={btnGhost} disabled={!allowed} onClick={() => edit(p)}>Edit</button>
                     <button className={btnGhost} disabled={!allowed} onClick={() => toggle(p)}>{p.status === "Active" ? "Deactivate" : "Activate"}</button>
                   </div>
                 </td>
               </tr>
             );
+            if (hist !== p.id) return [row];
+            const entries = db.ledger.filter((e) => e.productId === p.id).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 15);
+            return [
+              row,
+              <tr key={`${p.id}-h`}>
+                <td colSpan={10} className="bg-slate-50 px-4 py-4">
+                  <p className="mb-2 text-sm font-semibold text-slate-800">Latest movements of {p.name}</p>
+                  <Table heads={["Date", "Type", "Change", "Reference", "Party", "By"]} min={600} empty="No movements.">
+                    {entries.map((e) => (
+                      <tr key={e.id}><td className={td}>{e.date}</td><td className={td}>{e.type}</td><td className={`${td} font-semibold ${e.qty < 0 ? "text-rose-600" : "text-emerald-600"}`}>{e.qty > 0 ? "+" : ""}{e.qty}</td><td className={td}>{e.ref}</td><td className={td}>{e.party}</td><td className={td}>{e.by}</td></tr>
+                    ))}
+                  </Table>
+                </td>
+              </tr>,
+            ];
           })}
         </Table>
       </Card>
-    </div>
+    </>
   );
 }
 
@@ -1667,15 +1441,12 @@ function ReceivingTab({ ctx }: { ctx: Ctx }) {
   const [f, setF] = useState(blank);
   const [challan, setChallan] = useState("");
   const [lines, setLines] = useState<FormLine[]>([blankLine()]);
+  const [q, setQ] = useState("");
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const ok = run(
-      (d) =>
-        createReceipt(d, user, {
-          ...f, challanImage: challan,
-          lines: lines.map((l) => ({ productId: l.productId, qty: toBase(l, db.products), unitPrice: Math.max(0, num(l.price)) })),
-        }),
+      (d) => createReceipt(d, user, { ...f, challanImage: challan, lines: lines.map((l) => ({ productId: l.productId, qty: toBase(l, db.products), unitPrice: Math.max(0, num(l.price)) })) }),
       { module: "Receiving", action: "Create receipt", detail: `Challan ${f.challanNo}` }
     );
     if (ok) {
@@ -1687,6 +1458,7 @@ function ReceivingTab({ ctx }: { ctx: Ctx }) {
 
   const total = (r: Receipt) => r.lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
   const offices = ["Main Store", ...db.companies.map((c) => `${c.name} (${c.officeCategory})`)];
+  const rows = db.receipts.filter((r) => `${r.no} ${r.challanNo} ${r.invoiceNo} ${db.vendors.find((v) => v.id === r.vendorId)?.name ?? ""}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div className="grid gap-6 xl:grid-cols-[460px_1fr]">
@@ -1706,10 +1478,7 @@ function ReceivingTab({ ctx }: { ctx: Ctx }) {
               <select className={inputCls} {...bind(f, setF, "destination")}>{offices.map((o) => <option key={o}>{o}</option>)}</select>
             </Field>
             <ImageUpload label="Challan Copy (image or PDF)" value={challan} onChange={setChallan} allowPdf helperText="Photo or PDF of the vendor challan" />
-            <div>
-              <p className="mb-2 text-sm font-medium text-slate-700">Products *</p>
-              <LineEditor lines={lines} setLines={setLines} products={active} showPrice />
-            </div>
+            <div><p className="mb-2 text-sm font-medium text-slate-700">Products *</p><LineEditor lines={lines} setLines={setLines} products={active} showPrice /></div>
             <Field label="Notes"><textarea rows={2} className={inputCls} {...bind(f, setF, "notes")} /></Field>
             <button type="submit" className={`${btnPrimary} w-full`}><ArrowDownToLine size={16} /> Save Receipt</button>
           </form>
@@ -1717,11 +1486,11 @@ function ReceivingTab({ ctx }: { ctx: Ctx }) {
         {!allowed && <p className="mt-3 text-xs text-amber-700">Your role cannot receive stock.</p>}
       </Card>
 
-      <Card title="Receiving History">
+      <Card title="Receiving History" action={<SearchBox value={q} onChange={setQ} placeholder="Search receipt, challan, vendor..." />}>
         <Table heads={["Receipt", "Vendor", "Challan / Invoice", "Items", "Value", "Status", "Challan"]} min={950} empty="No receipts yet.">
-          {db.receipts.map((r) => (
-            <tr key={r.id}>
-              <td className={td}><p className="font-semibold">{r.no}</p><p className="text-xs text-slate-500">{r.date}</p></td>
+          {rows.map((r) => (
+            <tr key={r.id} className="hover:bg-slate-50">
+              <td className={td}><p className="font-semibold">{r.no}</p><p className="text-xs text-slate-500">{r.date} · {r.destination}</p></td>
               <td className={td}>{db.vendors.find((v) => v.id === r.vendorId)?.name ?? "—"}</td>
               <td className={td}>{r.challanNo}<p className="text-xs text-slate-500">{r.invoiceNo || "—"}</p></td>
               <td className={td}>{r.lines.map((l) => `${l.qty} × ${pname(db, l.productId)}`).join(", ")}</td>
@@ -1757,14 +1526,7 @@ function DistributionTab({ ctx }: { ctx: Ctx }) {
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const ok = run(
-      (d) =>
-        createIssue(d, user, {
-          ...f,
-          recipientType: f.recipientType as RecipientType,
-          usage: f.usage as Usage,
-          handover: f.handover as "Direct" | "Intermediary",
-          lines: lines.map((l) => ({ productId: l.productId, qty: toBase(l, db.products) })),
-        }),
+      (d) => createIssue(d, user, { ...f, recipientType: f.recipientType as RecipientType, usage: f.usage as Usage, handover: f.handover as "Direct" | "Intermediary", lines: lines.map((l) => ({ productId: l.productId, qty: toBase(l, db.products) })) }),
       { module: "Distribution", action: "Create distribution", detail: `${f.recipientType} · ${f.usage}` }
     );
     if (ok) {
@@ -1778,7 +1540,7 @@ function DistributionTab({ ctx }: { ctx: Ctx }) {
   );
 
   return (
-    <div className="space-y-6">
+    <>
       <Card title="New Distribution" subtitle="One distribution can contain many products. Employee issues stay pending until the employee acknowledges.">
         <fieldset disabled={!allowed} className="m-0 min-w-0 border-0 p-0">
           <form onSubmit={submit} className="space-y-4">
@@ -1786,11 +1548,7 @@ function DistributionTab({ ctx }: { ctx: Ctx }) {
               <Field label="Recipient Type">
                 <select className={inputCls} {...bind(f, setF, "recipientType")}><option>Employee</option><option>Department</option><option>Client</option><option>Guest</option><option>Other</option></select>
               </Field>
-              {isEmp && (
-                <Field label="Use Type">
-                  <select className={inputCls} {...bind(f, setF, "usage")}><option value="Office">Office use</option><option value="Personal">Personal use</option></select>
-                </Field>
-              )}
+              {isEmp && <Field label="Use Type"><select className={inputCls} {...bind(f, setF, "usage")}><option value="Office">Office use</option><option value="Personal">Personal use</option></select></Field>}
               {(isEmp || isDept) && (
                 <Field label={isDept ? "Custodian (optional)" : "Employee *"}>
                   <select className={inputCls} {...bind(f, setF, "employeeId")}>
@@ -1817,15 +1575,10 @@ function DistributionTab({ ctx }: { ctx: Ctx }) {
               <Field label="Purpose"><input className={inputCls} {...bind(f, setF, "purpose")} /></Field>
               <Field label="Date"><input type="date" required className={inputCls} {...bind(f, setF, "date")} /></Field>
               <Field label="Issued By *"><input required className={inputCls} {...bind(f, setF, "issuedBy")} /></Field>
-              <Field label="Handover">
-                <select className={inputCls} {...bind(f, setF, "handover")}><option>Direct</option><option>Intermediary</option></select>
-              </Field>
+              <Field label="Handover"><select className={inputCls} {...bind(f, setF, "handover")}><option>Direct</option><option>Intermediary</option></select></Field>
               {f.handover === "Intermediary" && <Field label="Intermediary Name *"><input className={inputCls} {...bind(f, setF, "intermediary")} /></Field>}
             </div>
-            <div>
-              <p className="mb-2 text-sm font-medium text-slate-700">Products *</p>
-              <LineEditor lines={lines} setLines={setLines} products={available} stock={stock} />
-            </div>
+            <div><p className="mb-2 text-sm font-medium text-slate-700">Products *</p><LineEditor lines={lines} setLines={setLines} products={available} stock={stock} /></div>
             <Field label="Notes"><input className={inputCls} {...bind(f, setF, "notes")} /></Field>
             <button className={btnPrimary} type="submit"><ArrowUpFromLine size={16} /> Submit Distribution</button>
           </form>
@@ -1836,15 +1589,15 @@ function DistributionTab({ ctx }: { ctx: Ctx }) {
       <Card
         title="Distribution History"
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <select className={inputCls} value={usageFilter} onChange={(e) => setUsageFilter(e.target.value)}><option>All</option><option>Personal</option><option>Office</option><option>Gift</option></select>
-            <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search..." />
+            <SearchBox value={q} onChange={setQ} />
           </div>
         }
       >
         <Table heads={["Reference", "Recipient", "Use / Purpose", "Items", "Handover", "Status", "Action"]} min={1100} empty="No distributions yet.">
           {rows.map((i) => (
-            <tr key={i.id}>
+            <tr key={i.id} className="hover:bg-slate-50">
               <td className={td}><p className="font-semibold">{i.no}</p><p className="text-xs text-slate-500">{i.date}</p></td>
               <td className={td}>{recipientLabel(db, i)}</td>
               <td className={td}><Badge>{i.usage}</Badge><p className="mt-1 text-xs text-slate-500">{i.event || i.purpose || "—"}</p></td>
@@ -1852,31 +1605,36 @@ function DistributionTab({ ctx }: { ctx: Ctx }) {
               <td className={td}>{i.handover}{i.intermediary ? ` (${i.intermediary})` : ""}<p className="text-xs text-slate-500">by {i.issuedBy}</p></td>
               <td className={td}><Badge>{i.status}</Badge>{i.ackAt && <p className="mt-1 text-xs text-slate-500">Ack: {new Date(i.ackAt).toLocaleString()}</p>}</td>
               <td className={td}>
-                {i.status === "Awaiting Acknowledgement" && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-slate-500">Demo PIN <span className="font-mono font-semibold text-slate-800">{i.pin}</span> (give it to the employee)</p>
-                    <div className="flex gap-2">
-                      <input className={`${inputCls} w-24`} placeholder="PIN" value={pins[i.id] ?? ""} onChange={(e) => setPins({ ...pins, [i.id]: e.target.value })} />
-                      <button className={btnPrimary} onClick={() => run((d) => acknowledgeIssue(d, i.id, pins[i.id] ?? ""), { module: "Distribution", action: "Acknowledge", detail: i.no })}>Confirm</button>
-                    </div>
-                    <button
-                      className={btnDanger}
-                      disabled={!allowed}
-                      onClick={() => {
-                        const reason = window.prompt("Reason for reversing this distribution:");
-                        if (reason) run((d) => reverseIssue(d, i.id, user.name, reason), { module: "Distribution", action: "Reverse", detail: `${i.no}: ${reason}` });
-                      }}
-                    >
-                      <Undo2 size={14} /> Reverse
-                    </button>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  {(i.status === "Awaiting Acknowledgement" || i.status === "Completed") && (
+                    <button className={btnGhost} onClick={() => printIssueSlip(db, i)}><Printer size={14} /> Print slip</button>
+                  )}
+                  {i.status === "Awaiting Acknowledgement" && (
+                    <>
+                      <p className="text-xs text-slate-500">Demo PIN <span className="font-mono font-semibold text-slate-800">{i.pin}</span> (give it to the employee)</p>
+                      <div className="flex gap-2">
+                        <input className={`${inputCls} w-24`} placeholder="PIN" value={pins[i.id] ?? ""} onChange={(e) => setPins({ ...pins, [i.id]: e.target.value })} />
+                        <button className={btnPrimary} onClick={() => run((d) => acknowledgeIssue(d, i.id, pins[i.id] ?? ""), { module: "Distribution", action: "Acknowledge", detail: i.no })}>Confirm</button>
+                      </div>
+                      <button
+                        className={btnDanger}
+                        disabled={!allowed}
+                        onClick={() => {
+                          const reason = window.prompt("Reason for reversing this distribution:");
+                          if (reason) run((d) => reverseIssue(d, i.id, user.name, reason), { module: "Distribution", action: "Reverse", detail: `${i.no}: ${reason}` });
+                        }}
+                      >
+                        <Undo2 size={14} /> Reverse
+                      </button>
+                    </>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
         </Table>
       </Card>
-    </div>
+    </>
   );
 }
 
@@ -1891,6 +1649,7 @@ function ReturnsTab({ ctx }: { ctx: Ctx }) {
   const [v, setV] = useState({ vendorId: "", receiptId: "", date: todayStr(), reason: "", receivedBy: user.name, notes: "" });
   const [vLines, setVLines] = useState<FormLine[]>([blankLine("Defective")]);
   const [credit, setCredit] = useState<Record<string, string>>({});
+  const [q, setQ] = useState("");
 
   const held = useMemo(() => {
     const m = new Map<string, Product>();
@@ -1917,21 +1676,19 @@ function ReturnsTab({ ctx }: { ctx: Ctx }) {
     if (ok) { setV({ ...v, receiptId: "", reason: "", notes: "" }); setVLines([blankLine("Defective")]); }
   }
 
+  const rows = db.returns.filter((r) => `${r.no} ${r.source} ${r.reason} ${db.employees.find((x) => x.id === r.employeeId)?.name ?? ""} ${db.vendors.find((x) => x.id === r.vendorId)?.name ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+
   return (
-    <div className="space-y-6">
+    <>
       <Card title="Record a Return" subtitle="Employee returns update the employee's possession. Vendor returns reduce stock after approval.">
         <div className="mb-4 flex gap-2">
-          {(["Employee", "Vendor"] as const).map((m) => (
-            <button key={m} onClick={() => setMode(m)} className={mode === m ? btnPrimary : btnGhost}>{m} Return</button>
-          ))}
+          {(["Employee", "Vendor"] as const).map((m) => <button key={m} onClick={() => setMode(m)} className={mode === m ? btnPrimary : btnGhost}>{m} Return</button>)}
         </div>
         <fieldset disabled={!allowed} className="m-0 min-w-0 border-0 p-0">
           {mode === "Employee" ? (
             <form onSubmit={submitEmployee} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Employee *">
-                  <select required className={inputCls} {...bind(e, setE, "employeeId")}><option value="">Select</option>{db.employees.map((x) => <option key={x.id} value={x.id}>{x.empId} — {x.name}</option>)}</select>
-                </Field>
+                <Field label="Employee *"><select required className={inputCls} {...bind(e, setE, "employeeId")}><option value="">Select</option>{db.employees.map((x) => <option key={x.id} value={x.id}>{x.empId} — {x.name}</option>)}</select></Field>
                 <Field label="Return Date"><input type="date" className={inputCls} {...bind(e, setE, "date")} /></Field>
                 <Field label="Received By *"><input required className={inputCls} {...bind(e, setE, "receivedBy")} /></Field>
                 <Field label="Reason"><input className={inputCls} {...bind(e, setE, "reason")} /></Field>
@@ -1943,12 +1700,8 @@ function ReturnsTab({ ctx }: { ctx: Ctx }) {
           ) : (
             <form onSubmit={submitVendor} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Vendor *">
-                  <select required className={inputCls} value={v.vendorId} onChange={(ev) => setV({ ...v, vendorId: ev.target.value, receiptId: "" })}><option value="">Select</option>{db.vendors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
-                </Field>
-                <Field label="Original Receipt *">
-                  <select required className={inputCls} {...bind(v, setV, "receiptId")}><option value="">Select</option>{receipts.map((r) => <option key={r.id} value={r.id}>{r.no} · {r.challanNo}</option>)}</select>
-                </Field>
+                <Field label="Vendor *"><select required className={inputCls} value={v.vendorId} onChange={(ev) => setV({ ...v, vendorId: ev.target.value, receiptId: "" })}><option value="">Select</option>{db.vendors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
+                <Field label="Original Receipt *"><select required className={inputCls} {...bind(v, setV, "receiptId")}><option value="">Select</option>{receipts.map((r) => <option key={r.id} value={r.id}>{r.no} · {r.challanNo}</option>)}</select></Field>
                 <Field label="Date"><input type="date" className={inputCls} {...bind(v, setV, "date")} /></Field>
                 <Field label="Handled By *"><input required className={inputCls} {...bind(v, setV, "receivedBy")} /></Field>
                 <Field label="Reason *" className="sm:col-span-2"><input required className={inputCls} {...bind(v, setV, "reason")} placeholder="e.g. Defect found after inspection" /></Field>
@@ -1961,10 +1714,10 @@ function ReturnsTab({ ctx }: { ctx: Ctx }) {
         {!allowed && <p className="mt-3 text-xs text-amber-700">Your role cannot record returns.</p>}
       </Card>
 
-      <Card title="Return Register">
+      <Card title="Return Register" action={<SearchBox value={q} onChange={setQ} />}>
         <Table heads={["Reference", "Type / Party", "Items", "Reason", "Status", "Action"]} min={1000} empty="No returns yet.">
-          {db.returns.map((r) => (
-            <tr key={r.id}>
+          {rows.map((r) => (
+            <tr key={r.id} className="hover:bg-slate-50">
               <td className={td}><p className="font-semibold">{r.no}</p><p className="text-xs text-slate-500">{r.date}</p></td>
               <td className={td}>{r.source}<p className="text-xs text-slate-500">{r.source === "Employee" ? db.employees.find((x) => x.id === r.employeeId)?.name : db.vendors.find((x) => x.id === r.vendorId)?.name}</p></td>
               <td className={td}>{r.lines.map((l) => `${l.qty} × ${pname(db, l.productId)} [${l.condition}]`).join(", ")}</td>
@@ -1989,7 +1742,7 @@ function ReturnsTab({ ctx }: { ctx: Ctx }) {
           ))}
         </Table>
       </Card>
-    </div>
+    </>
   );
 }
 
@@ -2004,6 +1757,7 @@ function VendorsTab({ ctx }: { ctx: Ctx }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [show, setShow] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [q, setQ] = useState("");
 
   function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -2021,8 +1775,10 @@ function VendorsTab({ ctx }: { ctx: Ctx }) {
     if (ok) { setF(blankVendor); setEditing(null); setShow(false); }
   }
 
+  const list = db.vendors.filter((v) => `${v.name} ${v.contact} ${v.phone}`.toLowerCase().includes(q.toLowerCase()));
+
   return (
-    <div className="space-y-5">
+    <>
       <Section title="Vendors" subtitle="Who supplied what, at which price, and what was returned." action={<button className={btnPrimary} disabled={!allowed} onClick={() => { setEditing(null); setF(blankVendor); setShow(true); }}><Plus size={16} /> Add Vendor</button>} />
       {show && (
         <Card title={editing ? "Edit Vendor" : "New Vendor"} action={<button onClick={() => setShow(false)} aria-label="Close"><X size={18} /></button>}>
@@ -2038,9 +1794,9 @@ function VendorsTab({ ctx }: { ctx: Ctx }) {
           </form>
         </Card>
       )}
-      <Card>
+      <Card action={<SearchBox value={q} onChange={setQ} placeholder="Search vendors..." />}>
         <Table heads={["Vendor", "Contact", "Receipts", "Purchased", "Returned value", "Credit received", "Net payable", "Status", "Actions"]} min={1100} empty="No vendors.">
-          {db.vendors.flatMap((vd) => {
+          {list.flatMap((vd) => {
             const s = vendorStats(db, vd.id);
             const row = (
               <tr key={vd.id} className="hover:bg-slate-50">
@@ -2076,7 +1832,7 @@ function VendorsTab({ ctx }: { ctx: Ctx }) {
           })}
         </Table>
       </Card>
-    </div>
+    </>
   );
 }
 
@@ -2106,7 +1862,7 @@ function LedgerTab({ ctx }: { ctx: Ctx }) {
   }
 
   return (
-    <div className="space-y-6">
+    <>
       <Card title="Damage / Loss / Adjustment" subtitle="Reduces or corrects stock with a reason. Needs approval unless you are Super Admin.">
         <fieldset disabled={!allowed} className="m-0 min-w-0 border-0 p-0">
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -2142,7 +1898,7 @@ function LedgerTab({ ctx }: { ctx: Ctx }) {
         }
       >
         <Table heads={["Date", "Product", "Type", "Change", "Balance", "Reference", "Party", "By", "Note"]} min={1100} empty="No ledger entries.">
-          {rows.map(({ e, balance }) => (
+          {rows.slice(0, 300).map(({ e, balance }) => (
             <tr key={e.id} className="hover:bg-slate-50">
               <td className={td}>{e.date}</td>
               <td className={`${td} font-medium`}>{pname(db, e.productId)}</td>
@@ -2156,8 +1912,57 @@ function LedgerTab({ ctx }: { ctx: Ctx }) {
             </tr>
           ))}
         </Table>
+        {rows.length > 300 && <p className="mt-3 text-xs text-slate-500">Showing the latest 300 of {rows.length} entries. Use CSV for all of them.</p>}
       </Card>
-    </div>
+    </>
+  );
+}
+
+/* ---------- stock take (physical count) ---------- */
+
+function StockTakeTab({ ctx }: { ctx: Ctx }) {
+  const { db, stock, can, run, user } = ctx;
+  const allowed = can("stock.adjust");
+  const [counts, setCounts] = useState<Record<string, string>>({});
+  const [q, setQ] = useState("");
+  const active = db.products.filter((p) => p.status === "Active" && `${p.code} ${p.name}`.toLowerCase().includes(q.toLowerCase()));
+  const entered = Object.entries(counts).filter(([, v]) => v !== "").map(([productId, v]) => ({ productId, counted: num(v) }));
+  const diffCount = entered.filter((c) => Math.abs(c.counted - (stock[c.productId] ?? 0)) > EPS).length;
+
+  return (
+    <Card
+      title="Physical Stock Take"
+      subtitle="Count the real quantity on the shelf. Differences become adjustment requests (approval rules apply)."
+      action={
+        <div className="flex flex-wrap gap-2">
+          <SearchBox value={q} onChange={setQ} />
+          <button
+            className={btnPrimary}
+            disabled={!allowed || diffCount === 0}
+            onClick={() => { if (run((d) => createStockTake(d, user, entered), { module: "Stock Take", action: "Submit counts", detail: `${diffCount} difference(s)` })) setCounts({}); }}
+          >
+            <ClipboardCheck size={15} /> Submit {diffCount || ""} difference{diffCount === 1 ? "" : "s"}
+          </button>
+        </div>
+      }
+    >
+      {!allowed && <p className="mb-3 text-xs text-amber-700">Your role cannot submit a stock take.</p>}
+      <Table heads={["Product", "System stock", "Counted", "Difference"]} min={650} empty="No products.">
+        {active.map((p) => {
+          const sys = stock[p.id] ?? 0;
+          const raw = counts[p.id] ?? "";
+          const diff = raw === "" ? null : round3(num(raw) - sys);
+          return (
+            <tr key={p.id} className="hover:bg-slate-50">
+              <td className={td}><div className="flex items-center gap-3"><Img src={p.image} alt={p.name} className="h-10 w-10" /><div><p className="font-semibold">{p.name}</p><p className="text-xs text-slate-500">{p.code}</p></div></div></td>
+              <td className={`${td} font-medium`}>{sys} {p.baseUnit}</td>
+              <td className={td}><input type="number" min="0" step="any" disabled={!allowed} className={`${inputCls} w-32`} value={raw} onChange={(e) => setCounts({ ...counts, [p.id]: e.target.value })} placeholder="Count" /></td>
+              <td className={`${td} font-semibold ${diff === null || diff === 0 ? "text-slate-400" : diff < 0 ? "text-rose-600" : "text-emerald-600"}`}>{diff === null ? "—" : diff > 0 ? `+${diff}` : diff}</td>
+            </tr>
+          );
+        })}
+      </Table>
+    </Card>
   );
 }
 
@@ -2197,12 +2002,22 @@ function ReportsTab({ ctx }: { ctx: Ctx }) {
   const low = lowStock(db, stock);
   const dead = deadStock(db, stock);
   const dmgRows = db.damages.filter((x) => x.date.slice(0, 7) === month);
+  const monthIssues = db.issues.filter((i) => ["Awaiting Acknowledgement", "Completed"].includes(i.status) && i.date.slice(0, 7) === month);
+  const byUse = (["Personal", "Office", "Gift"] as Usage[]).map((u) => {
+    const list = monthIssues.filter((i) => i.usage === u);
+    return {
+      u, count: list.length,
+      qty: list.reduce((s, i) => s + i.lines.reduce((a, l) => a + l.qty, 0), 0),
+      value: list.reduce((s, i) => s + i.lines.reduce((a, l) => a + l.qty * l.unitCost, 0), 0),
+    };
+  });
+  const top = [...rows].filter((r) => r.issued > 0).sort((a, b) => b.issuedValue - a.issuedValue).slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <>
       <Section
         title="Reports"
-        subtitle="Monthly movement, low stock, dead stock, damage and loss."
+        subtitle="Monthly movement, usage breakdown, low stock, dead stock, damage and loss."
         action={
           <>
             <input type="month" className={inputCls} value={month} onChange={(e) => setMonth(e.target.value)} />
@@ -2211,15 +2026,28 @@ function ReportsTab({ ctx }: { ctx: Ctx }) {
         }
       />
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat title="Purchased this month" value={money(tot.rv)} tone="blue" />
-        <Stat title="Issued this month (cost)" value={money(tot.iv)} tone="violet" />
-        <Stat title="Damage / loss (cost)" value={money(tot.lv)} tone="rose" />
+        <Stat title="Purchased this month" value={tot.rv} format={money} tone="blue" icon={<ArrowDownToLine size={18} />} />
+        <Stat title="Issued this month (cost)" value={tot.iv} format={money} tone="violet" icon={<ArrowUpFromLine size={18} />} />
+        <Stat title="Damage / loss (cost)" value={tot.lv} format={money} tone="rose" icon={<AlertTriangle size={18} />} />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card title="Distribution by Use Type" subtitle="Personal vs office vs gift/external">
+          <Table heads={["Use", "Distributions", "Quantity", "Cost value"]} min={450}>
+            {byUse.map((x) => (<tr key={x.u}><td className={td}><Badge>{x.u}</Badge></td><td className={td}>{x.count}</td><td className={td}>{x.qty}</td><td className={td}>{money(x.value)}</td></tr>))}
+          </Table>
+        </Card>
+        <Card title="Top Issued Products" subtitle="By cost value this month">
+          <Table heads={["Product", "Issued qty", "Cost value"]} min={450} empty="Nothing issued this month.">
+            {top.map((r) => (<tr key={r.p.id}><td className={td}>{r.p.name}</td><td className={td}>{r.issued}</td><td className={td}>{money(r.issuedValue)}</td></tr>))}
+          </Table>
+        </Card>
       </div>
 
       <Card title={`Monthly Movement — ${month}`}>
         <Table heads={["Product", "Opening", "Received", "Issued", "Emp. return", "Vendor return", "Adj.", "Dmg/Loss", "Closing", "Issued value", "Loss value"]} min={1200}>
           {rows.map((r) => (
-            <tr key={r.p.id}>
+            <tr key={r.p.id} className="hover:bg-slate-50">
               <td className={`${td} font-medium`}>{r.p.name}</td><td className={td}>{r.opening}</td><td className={td}>{r.received}</td><td className={td}>{r.issued}</td>
               <td className={td}>{r.empReturn}</td><td className={td}>{r.vendorRet}</td><td className={td}>{r.adj}</td><td className={td}>{r.dmg}</td>
               <td className={`${td} font-semibold`}>{r.closing}</td><td className={td}>{money(r.issuedValue)}</td><td className={td}>{money(r.lossValue)}</td>
@@ -2248,6 +2076,6 @@ function ReportsTab({ ctx }: { ctx: Ctx }) {
           ))}
         </Table>
       </Card>
-    </div>
+    </>
   );
 }
