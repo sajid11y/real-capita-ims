@@ -165,6 +165,7 @@ export type Ctx = {
   can: (p: Perm) => boolean;
   run: (fn: (d: Db) => Result, audit?: { module: string; action: string; detail: string }) => boolean;
   notify: (msg: string, tone?: "ok" | "error") => void;
+    flush?: () => Promise<void>;
 };
 
 /* =========================================================
@@ -785,7 +786,7 @@ export function markVendorCredit(db: Db, id: string, amount: number): Result {
    APP HOOK (state, persistence, permissions)
 ========================================================= */
 
-export function useApp() {
+function useAppOld() {
   const [db, setDb] = useState<Db>(() => seedDb());
   const [userId, setUserIdState] = useState("u-1");
   const [hydrated, setHydrated] = useState(false);
@@ -2078,4 +2079,131 @@ function ReportsTab({ ctx }: { ctx: Ctx }) {
       </Card>
     </>
   );
+}
+
+/* =========================================================
+   APP HOOK (server-synced state, permissions)
+========================================================= */
+
+export function useApp(userId: string, initial: { state: Db; version: number }) {
+  const [db, setDb] = useState<Db>(initial.state);
+  const [toast, setToast] = useState<{ msg: string; tone: "ok" | "error" } | null>(null);
+  const dbRef = useRef(db);
+  const versionRef = useRef(initial.version);
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const pending = useRef(0);
+  const skip = useRef(false);
+  const timer = useRef<number | undefined>(undefined);
+
+  const notify = useCallback((msg: string, tone: "ok" | "error" = "ok") => {
+    setToast({ msg, tone });
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setToast(null), 5000);
+  }, []);
+
+  const applyServer = useCallback((state: unknown, version: number) => {
+    const n = normalizeDb(state);
+    if (!n) return;
+    dbRef.current = n;
+    versionRef.current = version;
+    setDb(n);
+  }, []);
+
+  /** Saves the current data to the server. Saves run one after another. */
+  const push = useCallback(() => {
+    const snapshot = dbRef.current;
+    pending.current += 1;
+    queue.current = queue.current
+      .then(async () => {
+        if (skip.current) return;
+        try {
+          const res = await fetch("/api/db", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: snapshot, version: versionRef.current }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            versionRef.current = data.version;
+            return;
+          }
+          if (res.status === 401) {
+            window.location.reload();
+            return;
+          }
+          if (res.status === 409 && data.state) {
+            skip.current = true;
+            applyServer(data.state, data.version);
+            notify("Someone else saved first. The latest data was loaded. Please repeat your last action.", "error");
+            return;
+          }
+          notify(data.error ?? "Could not save to the server.", "error");
+        } catch {
+          notify("Server not reachable. Your last change was not saved.", "error");
+        }
+      })
+      .finally(() => {
+        pending.current -= 1;
+        if (pending.current === 0) skip.current = false;
+      });
+  }, [applyServer, notify]);
+
+  // Pick up changes made by other users every few seconds.
+  useEffect(() => {
+    const id = window.setInterval(async () => {
+      if (pending.current > 0 || document.hidden) return;
+      try {
+        const res = await fetch("/api/db", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (pending.current === 0 && data.version > versionRef.current) applyServer(data.state, data.version);
+      } catch {
+        /* ignore network errors while polling */
+      }
+    }, 8000);
+    return () => window.clearInterval(id);
+  }, [applyServer]);
+
+  const found = db.users.find((u) => u.id === userId && u.active);
+  const user: AppUser = found ?? db.users[0];
+  const stock = useMemo(() => stockMap(db.ledger), [db.ledger]);
+
+  const can = useCallback(
+    (p: Perm) => {
+      if (user.role === "Super Admin") return true;
+      if (p === "backup") return user.backupAccess;
+      return (db.perms[user.role] ?? []).includes(p);
+    },
+    [user, db.perms]
+  );
+
+  const run = useCallback(
+    (fn: (d: Db) => Result, audit?: { module: string; action: string; detail: string }) => {
+      const cur = dbRef.current;
+      const actor = cur.users.find((u) => u.id === userId && u.active);
+      if (!actor) {
+        notify("Your account is not active.", "error");
+        return false;
+      }
+      const r = fn(cur);
+      if (r.error) {
+        notify(r.error, "error");
+        return false;
+      }
+      let next = r.db;
+      if (audit) {
+        next = { ...next, audit: [...next.audit, { id: makeId("a"), at: nowIso(), userId: actor.id, userName: actor.name, role: actor.role, ...audit }] };
+      }
+      dbRef.current = next;
+      setDb(next);
+      push();
+      if (r.message) notify(r.message);
+      return true;
+    },
+    [notify, push, userId]
+  );
+
+  const flush = useCallback(() => queue.current, []);
+  const ctx: Ctx = useMemo(() => ({ db, user, stock, can, run, notify, flush }), [db, user, stock, can, run, notify, flush]);
+  return { ctx, toast, dismissToast: () => setToast(null), valid: Boolean(found) };
 }

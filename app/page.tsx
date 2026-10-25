@@ -1,12 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import {
   AlertTriangle, Award, Bell, Boxes, Building2, CheckCircle2, ChevronRight, ClipboardCheck, Clock, Database,
   Download, History, LayoutDashboard, Menu, Monitor, Package, Plus, Search, ShieldCheck, Trophy, Upload, Users, X,
 } from "lucide-react";
+import AuthGate from "./components/AuthGate";
+import type { Initial, Session } from "./components/AuthGate";
 import CompanyManagement from "./components/CompanyManagement";
 import ImageUpload from "./components/ImageUpload";
 import InventoryManagement, {
@@ -16,21 +17,27 @@ import InventoryManagement, {
 } from "./components/InventoryManagement";
 import type { Achievement, AppUser, Ctx, Perm, Role } from "./components/InventoryManagement";
 
-/* The app reads the clock and browser storage, so it renders on the client only. */
-export default dynamic(() => Promise.resolve(Home), { ssr: false });
+/* The app needs a signed-in user, so everything renders inside AuthGate. */
+export default function Page() {
+  return <AuthGate>{(session, initial, logout) => <Home session={session} initial={initial} logout={logout} />}</AuthGate>;
+}
 
-type Page = "Dashboard" | "Companies" | "Employees" | "Assets" | "Inventory" | "Approvals" | "Achievements" | "Users" | "Audit" | "Backup";
+type PageName = "Dashboard" | "Companies" | "Employees" | "Assets" | "Inventory" | "Approvals" | "Achievements" | "Users" | "Audit" | "Backup";
 
-type NavItem = { name: Page; label: string; icon: typeof Package; show: boolean; badge?: number };
+type NavItem = { name: PageName; label: string; icon: typeof Package; show: boolean; badge?: number };
 
-function Home() {
-  const app = useApp();
+function Home({ session, initial, logout }: { session: Session; initial: Initial; logout: () => void }) {
+  const app = useApp(session.id, initial);
   const { ctx } = app;
   const { db, user, can } = ctx;
-  const [page, setPage] = useState<Page>("Dashboard");
+  const [page, setPage] = useState<PageName>("Dashboard");
   const [sidebar, setSidebar] = useState(false);
   const [bell, setBell] = useState(false);
   const [palette, setPalette] = useState(false);
+
+  useEffect(() => {
+    if (!app.valid) logout();
+  }, [app.valid, logout]);
 
   const pending = db.approvals.filter((a) => a.status === "Pending").length;
   const lowCount = lowStock(db, ctx.stock).length;
@@ -65,7 +72,7 @@ function Home() {
 
   const allItems = nav.flatMap((g) => g.items);
   const allowedPage = allItems.find((i) => i.name === page)?.show ?? false;
-  const current: Page = allowedPage ? page : "Dashboard";
+  const current: PageName = allowedPage ? page : "Dashboard";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -78,7 +85,7 @@ function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  function go(p: Page) {
+  function go(p: PageName) {
     setPage(p);
     setSidebar(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -110,16 +117,16 @@ function Home() {
         <div className="flex h-20 items-center justify-between border-b border-slate-100 px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-200"><Boxes size={23} /></div>
-            <div><p className="text-base font-extrabold tracking-tight text-slate-900">REAL CAPITA</p><p className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">PIDS · DEMO</p></div>
+            <div><p className="text-base font-extrabold tracking-tight text-slate-900">REAL CAPITA</p><p className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">PIDS</p></div>
           </div>
           <button onClick={() => setSidebar(false)} className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"><X size={19} /></button>
         </div>
 
         <div className="border-b border-slate-100 p-4">
-          <label className="mb-1 block text-[10px] font-bold tracking-wider text-slate-400">ACTING AS (DEMO SWITCH)</label>
-          <select className={inputCls} value={app.userId} onChange={(e) => app.setUserId(e.target.value)}>
-            {db.users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
-          </select>
+          <p className="text-[10px] font-bold tracking-wider text-slate-400">SIGNED IN AS</p>
+          <p className="mt-1 text-sm font-semibold text-slate-800">{user.name}</p>
+          <p className="text-xs text-slate-500">{user.role}</p>
+          <button onClick={logout} className={`${btnGhost} mt-3 w-full`}>Sign out</button>
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
@@ -147,8 +154,8 @@ function Home() {
         </nav>
 
         <div className="border-t border-slate-100 p-4 text-[11px] leading-5 text-slate-500">
-          <div className="mb-1 flex items-center gap-2 font-semibold text-slate-700"><CheckCircle2 size={15} className="text-emerald-600" /> Browser demo</div>
-          Data is saved in this browser only. The role switch is not real security.
+          <div className="mb-1 flex items-center gap-2 font-semibold text-slate-700"><CheckCircle2 size={15} className="text-emerald-600" /> Connected to server</div>
+          Data is saved in the server database and shared by all users.
         </div>
       </aside>
 
@@ -190,7 +197,7 @@ function Home() {
           <div key={current} className={fadeIn}>{render()}</div>
           <footer className="mt-10 flex flex-col justify-between gap-2 border-t border-slate-200 py-5 text-xs text-slate-400 sm:flex-row">
             <span>© 2026 Real Capita · Product Inventory & Distribution System</span>
-            <span>Frontend demo · connect a server database before production use</span>
+            <span>Permissions are checked in the browser only (server check is the next stage)</span>
           </footer>
         </main>
       </div>
@@ -212,9 +219,9 @@ function Home() {
    GLOBAL SEARCH (Ctrl + K)
 ========================================================= */
 
-type Hit = { label: string; sub: string; page: Page; icon: typeof Package };
+type Hit = { label: string; sub: string; page: PageName; icon: typeof Package };
 
-function Palette({ ctx, items, go, onClose }: { ctx: Ctx; items: NavItem[]; go: (p: Page) => void; onClose: () => void }) {
+function Palette({ ctx, items, go, onClose }: { ctx: Ctx; items: NavItem[]; go: (p: PageName) => void; onClose: () => void }) {
   const { db } = ctx;
   const [q, setQ] = useState("");
   const ref = useRef<HTMLInputElement>(null);
@@ -288,7 +295,7 @@ function monthKeys(count: number) {
   return keys;
 }
 
-function Dashboard({ ctx, go }: { ctx: Ctx; go: (p: Page) => void }) {
+function Dashboard({ ctx, go }: { ctx: Ctx; go: (p: PageName) => void }) {
   const { db, stock, user } = ctx;
   const low = lowStock(db, stock);
   const dead = deadStock(db, stock);
@@ -529,22 +536,46 @@ function UsersPage({ ctx }: { ctx: Ctx }) {
   const { db, user, run } = ctx;
   const isSA = user.role === "Super Admin";
   const creatable = ROLES.filter((r) => isSA || RANK[r] > RANK[user.role]);
-  const [f, setF] = useState<{ name: string; role: string; employeeId: string }>({ name: "", role: creatable[0] ?? "Receptionist", employeeId: "" });
+  const [f, setF] = useState({ name: "", role: creatable[0] ?? "Receptionist", employeeId: "", password: "" });
+  const [reset, setReset] = useState({ userId: "", password: "" });
 
-  function add(e: FormEvent<HTMLFormElement>) {
+  async function add(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const id = makeId("u");
     const ok = run(
       (d) => {
         const name = f.name.trim();
         if (!name) return fail(d, "User name is required.");
+        if (isSA && f.password.length < 8) return fail(d, "Password must be at least 8 characters.");
         if (!creatable.includes(f.role as Role)) return fail(d, "You cannot create a user at this level.");
         if (d.users.some((u) => u.name.toLowerCase() === name.toLowerCase())) return fail(d, "A user with this name already exists.");
-        const u: AppUser = { id: makeId("u"), name, role: f.role as Role, employeeId: f.employeeId, active: true, backupAccess: false, createdBy: user.name, createdAt: todayStr() };
+        const u: AppUser = { id, name, role: f.role as Role, employeeId: f.employeeId, active: true, backupAccess: false, createdBy: user.name, createdAt: todayStr() };
         return { db: { ...d, users: [...d.users, u] }, message: "User created." };
       },
       { module: "Users", action: "Create user", detail: `${f.name} (${f.role})` }
     );
-    if (ok) setF({ ...f, name: "", employeeId: "" });
+    if (!ok) return;
+    if (isSA) {
+      await ctx.flush?.();
+      const res = await fetch("/api/auth/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: id, password: f.password }) });
+      if (!res.ok) ctx.notify("User created, but the password was not set. Use Set / reset password below.", "error");
+    } else {
+      ctx.notify("User created. The Super Admin must set a password before this user can sign in.");
+    }
+    setF({ ...f, name: "", employeeId: "", password: "" });
+  }
+
+  async function resetPassword(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await ctx.flush?.();
+    const res = await fetch("/api/auth/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(reset) });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      ctx.notify("Password saved. That user was signed out everywhere.");
+      setReset({ userId: "", password: "" });
+    } else {
+      ctx.notify(data.error ?? "Could not set the password.", "error");
+    }
   }
 
   function deactivate(u: AppUser) {
@@ -581,7 +612,7 @@ function UsersPage({ ctx }: { ctx: Ctx }) {
       <Notice>Hierarchy rule: you can only create or deactivate users below your own level. Deactivation by anyone except the Super Admin goes through approval, and history is always preserved.</Notice>
 
       <Card title="Add User">
-        <form onSubmit={add} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <form onSubmit={add} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Field label="Full name *"><input required className={inputCls} {...bind(f, setF, "name")} /></Field>
           <Field label="Role"><select className={inputCls} {...bind(f, setF, "role")}>{creatable.map((r) => <option key={r}>{r}</option>)}</select></Field>
           <Field label="Linked employee (optional)">
@@ -590,9 +621,25 @@ function UsersPage({ ctx }: { ctx: Ctx }) {
               {db.employees.filter((e) => e.status === "Active").map((e) => <option key={e.id} value={e.id}>{e.empId} — {e.name}</option>)}
             </select>
           </Field>
+          {isSA && <Field label="Password * (min 8)"><input type="password" required minLength={8} className={inputCls} {...bind(f, setF, "password")} /></Field>}
           <div className="flex items-end"><button className={btnPrimary} type="submit" disabled={!creatable.length}><Plus size={16} /> Create user</button></div>
         </form>
       </Card>
+
+      {isSA && (
+        <Card title="Set / reset password" subtitle="Also use this to give a password to the demo users (Sub Admin, Manager, Receptionist).">
+          <form onSubmit={resetPassword} className="grid gap-4 sm:grid-cols-3">
+            <Field label="User">
+              <select required className={inputCls} value={reset.userId} onChange={(e) => setReset({ ...reset, userId: e.target.value })}>
+                <option value="">Select</option>
+                {db.users.map((u) => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
+              </select>
+            </Field>
+            <Field label="New password (min 8)"><input type="password" required minLength={8} className={inputCls} value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} /></Field>
+            <div className="flex items-end"><button className={btnPrimary} type="submit">Save password</button></div>
+          </form>
+        </Card>
+      )}
 
       <Card title={`Users (${db.users.length})`}>
         <Table heads={["User", "Role", "Linked employee", "Created by", "Backup access", "Status", "Actions"]} min={1000} empty="No users.">
@@ -694,7 +741,7 @@ function AuditPage({ ctx }: { ctx: Ctx }) {
         </Table>
         {rows.length > 500 && <p className="mt-3 text-xs text-slate-500">Showing the latest 500 of {rows.length} entries. Use Export CSV for all of them.</p>}
       </Card>
-      <Notice tone="amber">In production the audit table must be append-only on the server (no update or delete rights for any application user). A browser demo cannot guarantee that.</Notice>
+      <Notice tone="amber">In production the audit table must be append-only on the server (no update or delete rights for any application user). This version still saves the whole data set as one record, so the next stage moves audit writes to the server.</Notice>
     </div>
   );
 }
@@ -752,7 +799,7 @@ function BackupPage({ ctx }: { ctx: Ctx }) {
           notify("This file is not a valid PIDS backup.", "error");
           return;
         }
-        if (!window.confirm("Restore this backup? Current data in this browser will be replaced.")) return;
+        if (!window.confirm("Restore this backup? Current data on the server will be replaced.")) return;
         run(() => ({ db: restored, message: "Backup restored." }), { module: "Backup", action: "Restore backup", detail: file.name });
       })
       .catch(() => notify("Could not read this backup file.", "error"));
@@ -786,7 +833,7 @@ function BackupPage({ ctx }: { ctx: Ctx }) {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat title="Last Backup" value={last ? new Date(last).toLocaleDateString() : "Never"} detail={last ? new Date(last).toLocaleTimeString() : "Download a backup now"} tone={last ? "emerald" : "rose"} icon={<Database size={18} />} />
-        <Stat title="Data Size" value={`${sizeKb} KB`} detail="Browser storage limit is about 5,000 KB" tone="violet" icon={<Boxes size={18} />} />
+        <Stat title="Data Size" value={`${sizeKb} KB`} detail="Size of the whole data set" tone="violet" icon={<Boxes size={18} />} />
         <Stat title="Ledger Entries" value={db.ledger.length} detail={`${db.audit.length} audit entries`} icon={<History size={18} />} />
       </div>
 
